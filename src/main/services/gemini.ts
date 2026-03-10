@@ -1,19 +1,26 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
+import { LANGUAGES } from 'shared/languages'
+
 import { store } from './store'
 
-const PROMPTS: Record<string, string> = {
-  'pt>pt':
-    "You are a precise transcription assistant. Transcribe the following audio faithfully in Brazilian Portuguese (pt-BR). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.",
+function buildPrompt(from: string, to: string): string {
+  const fromLang = LANGUAGES[from]
+  const toLang = LANGUAGES[to]
+  const fromShort = fromLang.split(' ').pop()!
+  const toShort = toLang.split(' ').pop()!
 
-  'pt>en':
-    "You are a precise translation assistant. The following audio is spoken in Brazilian Portuguese (pt-BR). You MUST translate it into American English (en-US). Even if parts of the audio sound like English, treat the entire input as Portuguese and translate everything to English. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in English — no quotes, no labels, no explanation, no original Portuguese text.",
+  if (from === to) {
+    return `You are a precise transcription assistant. Transcribe the following audio faithfully in ${fromLang} (${from}). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.`
+  }
 
-  'en>en':
-    "You are a precise transcription assistant. Transcribe the following audio faithfully in American English (en-US). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.",
+  return `You are a precise translation assistant. The following audio is spoken in ${fromLang} (${from}). You MUST translate it into ${toLang} (${to}). Even if parts of the audio sound like ${toShort}, treat the entire input as ${fromShort} and translate everything to ${toShort}. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in ${toShort} — no quotes, no labels, no explanation, no original ${fromShort} text.`
+}
 
-  'en>pt':
-    "You are a precise translation assistant. The following audio is spoken in American English (en-US). You MUST translate it into Brazilian Portuguese (pt-BR). Even if parts of the audio sound like Portuguese, treat the entire input as English and translate everything to Portuguese. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in Portuguese — no quotes, no labels, no explanation, no original English text.",
+function getPrompt(mode: string): string {
+  const [from, to] = mode.split('>')
+  if (LANGUAGES[from] && LANGUAGES[to]) return buildPrompt(from, to)
+  return buildPrompt('en-US', 'en-US')
 }
 
 export async function transcribeAudio(
@@ -29,10 +36,8 @@ export async function transcribeAudio(
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' })
 
-  const prompt = PROMPTS[mode] || PROMPTS['en>en']
-
   const result = await model.generateContent([
-    prompt,
+    getPrompt(mode),
     {
       inlineData: {
         data: audioBase64,

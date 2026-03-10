@@ -10,6 +10,7 @@ import {
   X,
   Trash2,
 } from 'lucide-react'
+import { MODES } from 'shared/languages'
 
 const { App } = window
 
@@ -32,15 +33,7 @@ function playTone(freq: number, endFreq: number, duration = 80) {
 }
 
 type View = 'main' | 'settings' | 'history'
-type Mode = 'pt>pt' | 'pt>en' | 'en>en' | 'en>pt'
 type Status = 'idle' | 'recording' | 'processing'
-
-const MODES: { value: Mode; label: string }[] = [
-  { value: 'pt>pt', label: 'PT \u2192 PT' },
-  { value: 'pt>en', label: 'PT \u2192 EN' },
-  { value: 'en>en', label: 'EN \u2192 EN' },
-  { value: 'en>pt', label: 'EN \u2192 PT' },
-]
 
 function timeAgo(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000)
@@ -53,7 +46,7 @@ function timeAgo(ts: number) {
 export function MainScreen() {
   const [view, setView] = useState<View>('main')
   const [status, setStatus] = useState<Status>('idle')
-  const [mode, setMode] = useState<Mode>('pt>en')
+  const [mode, setMode] = useState('pt-BR>en-US')
   const [lastResult, setLastResult] = useState('')
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
@@ -93,7 +86,7 @@ export function MainScreen() {
         App.getAll(),
         App.getVersion(),
       ])
-      setMode(data.mode as Mode)
+      setMode(data.mode)
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
       setHistory(data.history)
@@ -219,7 +212,7 @@ export function MainScreen() {
   }
 
   const handleModeChange = async (val: string) => {
-    setMode(val as Mode)
+    setMode(val)
     await App.storeSet('mode', val)
   }
 
