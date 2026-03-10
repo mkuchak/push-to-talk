@@ -42,6 +42,12 @@ export default {
     icon: `${resources}/build/icons/icon.icns`,
     category: 'public.app-category.utilities',
     target: ['zip', 'dmg', 'dir'],
+    entitlements: 'build/entitlements.mac.plist',
+    entitlementsInherit: 'build/entitlements.mac.plist',
+    extendInfo: {
+      NSMicrophoneUsageDescription:
+        'Push to Talk needs microphone access to record and transcribe your voice.',
+    },
   },
 
   linux: {
