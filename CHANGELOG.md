@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.1](https://github.com/mkuchak/push-to-talk/compare/v0.7.0...v0.7.1) (2026-03-10)
+
+### Bug Fixes
+
+* **mac:** add microphone entitlements for packaged app ([0c1eaa9](https://github.com/mkuchak/push-to-talk/commit/0c1eaa94cfbe18e3e8db6ff1cfa9ba082f07f3e5))
+
 ## [0.7.0](https://github.com/mkuchak/push-to-talk/compare/v0.6.0...v0.7.0) (2026-03-10)
 
 ### Features
