@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen, systemPreferences } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, screen, systemPreferences } from 'electron'
 
 import { makeAppWithSingleInstanceLock } from 'lib/electron-app/factories/app/instance'
 import { ignoreConsoleWarnings } from 'lib/electron-app/utils'
@@ -13,11 +13,42 @@ import { setupKeyListener } from './services/key-listener'
 import { setupTray } from './services/tray'
 
 // Platform setup
+app.setName('Push to Talk')
 if (PLATFORM.IS_LINUX) app.disableHardwareAcceleration()
 if (PLATFORM.IS_WINDOWS)
   app.setAppUserModelId(ENVIRONMENT.IS_DEV ? process.execPath : makeAppId())
 app.commandLine.appendSwitch('force-color-profile', 'srgb')
 ignoreConsoleWarnings(['Manifest version 2 is deprecated'])
+
+// Custom menu so macOS menu bar shows "Push to Talk" instead of "Electron"
+Menu.setApplicationMenu(
+  Menu.buildFromTemplate([
+    {
+      label: 'Push to Talk',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+  ]),
+)
 
 let mainWindow: BrowserWindow | null = null
 let isQuitting = false
