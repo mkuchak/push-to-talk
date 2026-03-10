@@ -23,7 +23,7 @@ let mainWindow: BrowserWindow | null = null
 let isQuitting = false
 let isShowingWindow = false
 
-function showWindowOnCurrentScreen() {
+function showWindowOnCurrentScreen(stealFocus = false) {
   if (!mainWindow) return
 
   // Guard: prevent the space-change notification from hiding
@@ -55,8 +55,14 @@ function showWindowOnCurrentScreen() {
   }
 
   mainWindow.setPosition(newX, newY)
-  mainWindow.show()
-  mainWindow.focus()
+
+  if (stealFocus) {
+    mainWindow.show()
+    mainWindow.focus()
+  } else {
+    // Show without stealing focus — keeps cursor in the active app
+    mainWindow.showInactive()
+  }
 
   // Pin to current Space after a delay so macOS finishes placing the window
   if (PLATFORM.IS_MAC) {
@@ -115,10 +121,10 @@ makeAppWithSingleInstanceLock(async () => {
   })
 
   // Show window when clicking dock icon
-  app.on('activate', () => showWindowOnCurrentScreen())
+  app.on('activate', () => showWindowOnCurrentScreen(true))
 
   // Focus existing window on second instance launch
-  app.on('second-instance', () => showWindowOnCurrentScreen())
+  app.on('second-instance', () => showWindowOnCurrentScreen(true))
 
   app.on('before-quit', () => {
     isQuitting = true
