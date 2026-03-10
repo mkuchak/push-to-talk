@@ -2,7 +2,7 @@
   "displayName": "Push to Talk",
   "name": "push-to-talk",
   "description": "Voice-to-text transcription and translation with auto-paste, powered by Google Gemini",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "main": "./node_modules/.dev/main/index.mjs",
   "resources": "src/resources",
   "author": {
