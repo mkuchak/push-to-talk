@@ -7,13 +7,13 @@ const PROMPTS: Record<string, string> = {
     "You are a precise transcription assistant. Transcribe the following audio faithfully in Brazilian Portuguese (pt-BR). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.",
 
   'pt>en':
-    "You are a precise translation assistant. The following audio is spoken in Brazilian Portuguese (pt-BR). Produce a faithful, natural-sounding translation in American English (en-US). Preserve the speaker's meaning, tone, and intent. Fix any obvious errors. Output only the translated text, nothing else — no quotes, no labels, no explanation.",
+    "You are a precise translation assistant. The following audio is spoken in Brazilian Portuguese (pt-BR). You MUST translate it into American English (en-US). Even if parts of the audio sound like English, treat the entire input as Portuguese and translate everything to English. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in English — no quotes, no labels, no explanation, no original Portuguese text.",
 
   'en>en':
     "You are a precise transcription assistant. Transcribe the following audio faithfully in American English (en-US). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.",
 
   'en>pt':
-    "You are a precise translation assistant. The following audio is spoken in American English (en-US). Produce a faithful, natural-sounding translation in Brazilian Portuguese (pt-BR). Preserve the speaker's meaning, tone, and intent. Fix any obvious errors. Output only the translated text, nothing else — no quotes, no labels, no explanation.",
+    "You are a precise translation assistant. The following audio is spoken in American English (en-US). You MUST translate it into Brazilian Portuguese (pt-BR). Even if parts of the audio sound like Portuguese, treat the entire input as English and translate everything to Portuguese. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in Portuguese — no quotes, no labels, no explanation, no original English text.",
 }
 
 export async function transcribeAudio(
