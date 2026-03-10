@@ -11,7 +11,8 @@ import { transcribeAudio } from './services/gemini'
 import { pasteText } from './services/paste'
 import { setupKeyListener } from './services/key-listener'
 import { setupTray } from './services/tray'
-import { autoUpdater } from 'electron-updater'
+import pkg from 'electron-updater'
+const { autoUpdater } = pkg
 
 // Platform setup
 app.setName('Push to Talk')
