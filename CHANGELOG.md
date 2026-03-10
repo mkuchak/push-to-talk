@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.2](https://github.com/mkuchak/push-to-talk/compare/v0.5.1...v0.5.2) (2026-03-10)
+
+### Bug Fixes
+
+* **ci:** add write permissions and bypass 2h time window ([9e3de73](https://github.com/mkuchak/push-to-talk/commit/9e3de73ab25911bafb16dd880cc81569fa020f41))
+
 ## [0.5.1](https://github.com/mkuchak/push-to-talk/compare/v0.5.0...v0.5.1) (2026-03-10)
 
 ### Bug Fixes
