@@ -1,6 +1,6 @@
 import Store from 'electron-store'
 
-export interface HistoryEntry {
+interface HistoryEntry {
   id: string
   text: string
   mode: string
@@ -18,7 +18,7 @@ export const store = new Store<StoreSchema>({
   name: 'push-to-talk',
   defaults: {
     apiKey: '',
-    mode: 'pt>en',
+    mode: 'pt-BR>en-US',
     deviceId: 'default',
     history: [],
   },
