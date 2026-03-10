@@ -24,7 +24,7 @@
     "build": "pnpm electron-builder",
     "postinstall": "run-s prebuild install:deps",
     "install:deps": "electron-builder install-app-deps",
-    "release": "release-it",
+    "release": "GITHUB_TOKEN=$(gh auth token) release-it",
     "release:build": "electron-builder --publish always",
     "clean:dev": "rimraf ./node_modules/.dev",
     "lint": "biome check --no-errors-on-unmatched",
