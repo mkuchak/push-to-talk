@@ -16,13 +16,3 @@ export function makeAppId(id: string = appId): string {
   return id
 }
 
-/**
- *
- * @param {number} ms
- * @description Wait for a given number of milliseconds.
- * @example
- * await waitFor(1000) // Waits for 1 second
- */
-export function waitFor(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
