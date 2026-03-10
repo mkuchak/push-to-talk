@@ -29,6 +29,7 @@ export default {
     provider: 'github',
     owner: 'mkuchak',
     repo: 'push-to-talk',
+    releaseType: 'release',
   },
 
   directories: {
