@@ -5,7 +5,7 @@ import { createWindow } from 'lib/electron-app/factories/windows/create'
 
 export async function MainWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize
-  const windowWidth = 440
+  const windowWidth = 528
   const isMac = process.platform === 'darwin'
 
   const window = createWindow({

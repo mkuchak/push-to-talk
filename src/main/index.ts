@@ -75,7 +75,7 @@ function showWindowOnCurrentScreen(stealFocus = false) {
   const { x: dx, y: dy, width: dw } = currentDisplay.workArea
 
   // Center horizontally on that display, 80px from top
-  const windowWidth = 440
+  const windowWidth = 528
   const newX = Math.round(dx + (dw - windowWidth) / 2)
   const newY = dy + 80
 
