@@ -25,6 +25,12 @@ export default {
   productName: displayName,
   copyright: `Copyright © ${currentYear} — ${author}`,
 
+  publish: {
+    provider: 'github',
+    owner: 'mkuchak',
+    repo: 'push-to-talk',
+  },
+
   directories: {
     app: getDevFolder(main),
     output: `dist/v${version}`,

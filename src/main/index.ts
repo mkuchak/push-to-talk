@@ -11,6 +11,7 @@ import { transcribeAudio } from './services/gemini'
 import { pasteText } from './services/paste'
 import { setupKeyListener } from './services/key-listener'
 import { setupTray } from './services/tray'
+import { autoUpdater } from 'electron-updater'
 
 // Platform setup
 app.setName('Push to Talk')
@@ -163,6 +164,10 @@ makeAppWithSingleInstanceLock(async () => {
 
   // Keep running when window is hidden
   app.on('window-all-closed', () => {})
+
+  // Check for updates (silently, no errors if offline)
+  autoUpdater.logger = null
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {})
 
   // Global key listener for push-to-talk
   try {
