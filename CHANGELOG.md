@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/mkuchak/push-to-talk/compare/v0.5.2...v0.6.0) (2026-03-10)
+
+### Features
+
+* **icon:** redesign app and tray icons with mic and sound waves ([baf0175](https://github.com/mkuchak/push-to-talk/commit/baf0175365ea3859c167195766b4eee848fc4b94))
+* **ui:** add audio feedback tones for record/stop/cancel ([eae4e61](https://github.com/mkuchak/push-to-talk/commit/eae4e61aed610b9c402c6f4fc83e76544ff49006))
+
 ## [0.5.2](https://github.com/mkuchak/push-to-talk/compare/v0.5.1...v0.5.2) (2026-03-10)
 
 ### Bug Fixes
