@@ -45,6 +45,7 @@ export function MainScreen() {
   const [history, setHistory] = useState<
     Array<{ id: string; text: string; mode: string; timestamp: number }>
   >([])
+  const [appVersion, setAppVersion] = useState('')
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -70,11 +71,15 @@ export function MainScreen() {
   // Initialize app state
   useEffect(() => {
     ;(async () => {
-      const data = await App.getAll()
+      const [data, version] = await Promise.all([
+        App.getAll(),
+        App.getVersion(),
+      ])
       setMode(data.mode as Mode)
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
       setHistory(data.history)
+      setAppVersion(version)
       await initAudioStream(data.deviceId)
       const allDevices = await navigator.mediaDevices.enumerateDevices()
       setDevices(allDevices.filter((d) => d.kind === 'audioinput'))
@@ -265,6 +270,12 @@ export function MainScreen() {
                 ))}
               </select>
             </div>
+
+            {appVersion && (
+              <p className="text-[11px] text-white/25 text-center pt-1">
+                v{appVersion}
+              </p>
+            )}
           </div>
         </div>
       )}

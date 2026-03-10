@@ -40,6 +40,9 @@ const API = {
       }>
     }>,
 
+  // App info
+  getVersion: () => ipcRenderer.invoke('app:version') as Promise<string>,
+
   // Window control
   resizeWindow: (height: number) =>
     ipcRenderer.invoke('window:resize', height),

@@ -244,6 +244,8 @@ makeAppWithSingleInstanceLock(async () => {
     mainWindow.setSize(width, Math.min(Math.max(Math.ceil(height), 48), 500))
   })
 
+  ipcMain.handle('app:version', () => app.getVersion())
+
   ipcMain.handle('window:hide', () => mainWindow?.hide())
 
   ipcMain.handle('window:show', () => showWindowOnCurrentScreen())
