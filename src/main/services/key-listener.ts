@@ -56,8 +56,8 @@ export function setupKeyListener(callbacks: KeyListenerCallbacks) {
       tryScheduleRecord()
     }
 
-    // Slash key: toggle UI when Right Cmd + Right Alt are held
-    if (e.keycode === VC_SLASH && state.rightMeta && state.rightAlt) {
+    // Right Shift: toggle UI when Right Cmd + Right Alt are held
+    if (e.keycode === UiohookKey.ShiftRight && state.rightMeta && state.rightAlt) {
       cancelPendingRecord()
 
       if (state.recording) {
@@ -68,8 +68,8 @@ export function setupKeyListener(callbacks: KeyListenerCallbacks) {
       callbacks.onToggleUI()
     }
 
-    // Right Shift: cancel recording while Right Cmd + Right Alt are held
-    if (e.keycode === UiohookKey.ShiftRight && state.rightMeta && state.rightAlt) {
+    // Slash key: cancel recording while Right Cmd + Right Alt are held
+    if (e.keycode === VC_SLASH && state.rightMeta && state.rightAlt) {
       cancelPendingRecord()
 
       if (state.recording) {
