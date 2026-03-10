@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/mkuchak/push-to-talk/compare/v0.6.0...v0.7.0) (2026-03-10)
+
+### Features
+
+* **ui:** increase window width by 20% ([bf1619e](https://github.com/mkuchak/push-to-talk/commit/bf1619e9c1b11069f846e60af28d83347a02e06f))
+
+### Bug Fixes
+
+* **main:** use default import for electron-updater ESM compat ([37f9169](https://github.com/mkuchak/push-to-talk/commit/37f9169cdb30989ad5c365c0f6bdb7c816e1882c))
+
+### Refactoring
+
+* **languages:** extract shared languages map as single source of truth ([fe4412e](https://github.com/mkuchak/push-to-talk/commit/fe4412e00dea3e8c2557643e9ec782aa9a7ef818))
+* **store:** use full locale codes for default mode ([36236da](https://github.com/mkuchak/push-to-talk/commit/36236da230b9ab33946505d898b705a9e24cbd68))
+
 ## [0.6.0](https://github.com/mkuchak/push-to-talk/compare/v0.5.2...v0.6.0) (2026-03-10)
 
 ### Features
