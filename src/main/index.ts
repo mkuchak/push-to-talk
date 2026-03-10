@@ -19,6 +19,7 @@ if (PLATFORM.IS_LINUX) app.disableHardwareAcceleration()
 if (PLATFORM.IS_WINDOWS)
   app.setAppUserModelId(ENVIRONMENT.IS_DEV ? process.execPath : makeAppId())
 app.commandLine.appendSwitch('force-color-profile', 'srgb')
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 ignoreConsoleWarnings(['Manifest version 2 is deprecated'])
 
 // Custom menu so macOS menu bar shows "Push to Talk" instead of "Electron"

@@ -13,6 +13,24 @@ import {
 
 const { App } = window
 
+function playTone(freq: number, endFreq: number, duration = 80) {
+  const ctx = new AudioContext()
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(freq, ctx.currentTime)
+  osc.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + duration / 1000)
+
+  gain.gain.setValueAtTime(0.35, ctx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000)
+
+  osc.connect(gain).connect(ctx.destination)
+  osc.start()
+  osc.stop(ctx.currentTime + duration / 1000)
+  setTimeout(() => ctx.close(), duration + 50)
+}
+
 type View = 'main' | 'settings' | 'history'
 type Mode = 'pt>pt' | 'pt>en' | 'en>en' | 'en>pt'
 type Status = 'idle' | 'recording' | 'processing'
@@ -109,6 +127,7 @@ export function MainScreen() {
 
   const startRecording = useCallback(() => {
     if (!streamRef.current) return
+    playTone(600, 900)
     setError('')
     chunksRef.current = []
     const recorder = new MediaRecorder(streamRef.current)
@@ -123,6 +142,7 @@ export function MainScreen() {
   const stopAndTranscribe = useCallback(async () => {
     const recorder = mediaRecorderRef.current
     if (!recorder || recorder.state !== 'recording') return
+    playTone(900, 500)
     setStatus('processing')
 
     const blob = await new Promise<Blob>((resolve) => {
@@ -162,6 +182,7 @@ export function MainScreen() {
   }, [])
 
   const cancelRecording = useCallback(() => {
+    playTone(400, 250, 120)
     const recorder = mediaRecorderRef.current
     if (recorder && recorder.state === 'recording') {
       recorder.onstop = null
