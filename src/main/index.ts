@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, screen, systemPreferences } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, screen, session, systemPreferences } from 'electron'
 
 import { makeAppWithSingleInstanceLock } from 'lib/electron-app/factories/app/instance'
 import { ignoreConsoleWarnings } from 'lib/electron-app/utils'
@@ -125,11 +125,18 @@ function showWindowOnCurrentScreen(stealFocus = false) {
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
+  // Grant all renderer permission requests (microphone, camera, etc.)
+  session.defaultSession.setPermissionCheckHandler(() => true)
+  session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(true))
+
   // Request microphone permission on macOS
   if (PLATFORM.IS_MAC) {
-    try {
-      await systemPreferences.askForMediaAccess('microphone')
-    } catch {}
+    const status = systemPreferences.getMediaAccessStatus('microphone')
+    console.log('[mic] current status:', status)
+    if (status !== 'granted') {
+      const granted = await systemPreferences.askForMediaAccess('microphone')
+      console.log('[mic] askForMediaAccess result:', granted)
+    }
   }
 
   // Hide from dock — app lives in the tray (use both mechanisms for reliability)
