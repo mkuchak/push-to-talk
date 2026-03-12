@@ -33,6 +33,7 @@ const API = {
       mode: string
       deviceId: string
       context: string
+      selectedLanguages: string[]
       history: Array<{
         id: string
         text: string

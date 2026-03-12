@@ -12,6 +12,7 @@ interface StoreSchema {
   mode: string
   deviceId: string
   context: string
+  selectedLanguages: string[]
   history: HistoryEntry[]
 }
 
@@ -19,9 +20,10 @@ export const store = new Store<StoreSchema>({
   name: 'push-to-talk',
   defaults: {
     apiKey: '',
-    mode: 'pt-BR>en-US',
+    mode: 'en-US>en-US',
     deviceId: 'default',
     context: '',
+    selectedLanguages: ['en-US'],
     history: [],
   },
 })

@@ -257,6 +257,7 @@ makeAppWithSingleInstanceLock(async () => {
     mode: store.get('mode'),
     deviceId: store.get('deviceId'),
     context: store.get('context'),
+    selectedLanguages: store.get('selectedLanguages'),
     history: store.get('history'),
   }))
 
@@ -267,7 +268,7 @@ makeAppWithSingleInstanceLock(async () => {
   ipcMain.handle('window:resize', (_, height: number) => {
     if (!mainWindow) return
     const [width] = mainWindow.getSize()
-    mainWindow.setSize(width, Math.min(Math.max(Math.ceil(height), 48), 500))
+    mainWindow.setSize(width, Math.min(Math.max(Math.ceil(height), 48), 800))
   })
 
   ipcMain.handle('app:version', () => app.getVersion())
