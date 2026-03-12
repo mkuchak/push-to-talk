@@ -45,6 +45,7 @@ export default {
     entitlements: 'build/entitlements.mac.plist',
     entitlementsInherit: 'build/entitlements.mac.plist',
     extendInfo: {
+      LSUIElement: true,
       NSMicrophoneUsageDescription:
         'Push to Talk needs microphone access to record and transcribe your voice.',
     },
