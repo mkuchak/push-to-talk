@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.0](https://github.com/mkuchak/push-to-talk/compare/v0.7.1...v0.8.0) (2026-03-12)
+
+### Features
+
+* **context:** add optional context field for transcription ([c57e73c](https://github.com/mkuchak/push-to-talk/commit/c57e73c37998e29a7cd22bc7df1f23e05a3c2cb5))
+* **languages:** add language picker and dynamic mode selector ([d4f0f2c](https://github.com/mkuchak/push-to-talk/commit/d4f0f2ca431c76ae52a71f58ca1bf4b3bd643a2b))
+* **languages:** add selectable languages with dynamic modes ([1928e2a](https://github.com/mkuchak/push-to-talk/commit/1928e2af3df4abe3554bb2ec58d7a68cd2f65cc3))
+* **languages:** persist selected languages in store ([b9581a7](https://github.com/mkuchak/push-to-talk/commit/b9581a7f7a828c65c022ce8854a5dbfee3ec459e))
+* **languages:** show "Transcribe" label for same-language modes ([749c912](https://github.com/mkuchak/push-to-talk/commit/749c912e2c52896da8c278e6cb3c7a94262fcc49))
+* **paste:** save and restore clipboard around paste ([6e91228](https://github.com/mkuchak/push-to-talk/commit/6e912282e941a8c7ccac86aff6697da27bb9eda6))
+* **ui:** add shortcuts help view with keyboard reference ([d111ed6](https://github.com/mkuchak/push-to-talk/commit/d111ed634bfecb6a647198e30cc14bbc460f2450))
+
+### Bug Fixes
+
+* **mac:** enforce accessory policy after window show ([de15d66](https://github.com/mkuchak/push-to-talk/commit/de15d66fe2d3cc71fa2234b53256361d9a684601))
+* **mac:** fix entitlements for ad-hoc signing and hide dock ([b1ca9dd](https://github.com/mkuchak/push-to-talk/commit/b1ca9ddc226c58bb97c52b69b9ef0090de0a1a42))
+* **mic:** add permission handlers and improve access check ([ce81766](https://github.com/mkuchak/push-to-talk/commit/ce817664549ea7f28c9c14a798315786d0f9c9f3))
+* **mic:** fallback to default device on stale device ID ([780dcb3](https://github.com/mkuchak/push-to-talk/commit/780dcb38e7d0ff499b2312d22c356b1e741a57e2))
+* **paste:** remove clipboard save/restore to fix ghost image bug ([778c8b8](https://github.com/mkuchak/push-to-talk/commit/778c8b80e8c2626b71c25b02d6ae2132abd2b186))
+* **ui:** always show window on app launch ([17975ec](https://github.com/mkuchak/push-to-talk/commit/17975ec58bc293fdef7602d7c9fc692be44be117))
+
 ## [0.7.1](https://github.com/mkuchak/push-to-talk/compare/v0.7.0...v0.7.1) (2026-03-10)
 
 ### Bug Fixes
