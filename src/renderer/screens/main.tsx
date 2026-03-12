@@ -461,7 +461,7 @@ export function MainScreen() {
             {[
               { keys: ['Right ⌘', 'Right ⌥'], desc: 'Hold to record' },
               { keys: ['Release either key'], desc: 'Stop & transcribe' },
-              { keys: ['Right ⌘', 'Right ⌥', 'Right ⇧'], desc: 'Show / hide window' },
+              { keys: ['Right ⌥', 'Right ⇧'], desc: 'Show / hide window' },
               { keys: ['Right ⌘', 'Right ⌥', '/'], desc: 'Cancel recording' },
             ].map((s) => (
               <div
@@ -498,32 +498,32 @@ export function MainScreen() {
             style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
           >
             {/* Status indicator */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0">
               {status === 'recording' ? (
-                <>
-                  <span className="relative flex h-2.5 w-2.5">
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-2.5 py-1">
+                  <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                   </span>
-                  <span className="text-sm text-red-400 font-medium">
+                  <span className="text-xs text-red-400 font-medium">
                     Recording...
                   </span>
-                </>
+                </div>
               ) : status === 'processing' ? (
-                <>
+                <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-2.5 py-1">
                   <Loader2
-                    size={14}
+                    size={12}
                     className="animate-spin text-blue-400"
                   />
-                  <span className="text-sm text-blue-400">Processing...</span>
-                </>
+                  <span className="text-xs text-blue-400 font-medium">Processing...</span>
+                </div>
               ) : (
-                <>
+                <div className="flex items-center gap-2 px-0.5">
                   <Mic size={14} className="text-white/40" />
                   <span className="text-xs text-white/40">
                     Hold Right ⌘⌥ to talk
                   </span>
-                </>
+                </div>
               )}
             </div>
 
