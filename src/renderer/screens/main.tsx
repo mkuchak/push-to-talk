@@ -76,7 +76,14 @@ export function MainScreen() {
             : true,
       })
     } catch {
-      setError('Microphone access denied')
+      // Fallback to default device if the stored one is no longer available
+      try {
+        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true })
+        setSelectedDevice('default')
+        await App.storeSet('deviceId', 'default')
+      } catch {
+        setError('Microphone access denied')
+      }
     }
   }, [])
 
