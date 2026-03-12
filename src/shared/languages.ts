@@ -22,7 +22,9 @@ export function generateModes(locales: string[]) {
   return locales.flatMap((from) =>
     locales.map((to) => ({
       value: `${from}>${to}`,
-      label: `${displayLabel(from)} → ${displayLabel(to)}`,
+      label: from === to
+        ? `Transcribe ${displayLabel(from)}`
+        : `${displayLabel(from)} → ${displayLabel(to)}`,
     })),
   )
 }
