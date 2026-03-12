@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/mkuchak/push-to-talk/compare/v0.8.0...v0.9.0) (2026-03-12)
+
+### Features
+
+* **shortcuts:** simplify toggle UI to Right Alt + Right Shift ([881b06d](https://github.com/mkuchak/push-to-talk/commit/881b06d10b541e24fa2f7cd62110db3e0f9f1b6f))
+* **ui:** add pill badges for recording and processing status ([eed6049](https://github.com/mkuchak/push-to-talk/commit/eed604952c985d594b8297301040b4525246717a))
+
 ## [0.8.0](https://github.com/mkuchak/push-to-talk/compare/v0.7.1...v0.8.0) (2026-03-12)
 
 ### Features
