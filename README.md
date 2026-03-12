@@ -72,7 +72,7 @@ Select which languages you want in Settings. The app generates all possible tran
 |----------|--------|
 | Hold **Right Cmd + Right Alt** | Start recording |
 | Release either key | Stop recording and transcribe |
-| **Right Cmd + Right Alt + Right Shift** | Show / hide window |
+| **Right Alt + Right Shift** | Show / hide window |
 | **Right Cmd + Right Alt + /** | Cancel recording |
 
 ## Getting Started
