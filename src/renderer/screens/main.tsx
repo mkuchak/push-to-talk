@@ -11,7 +11,7 @@ import {
   Trash2,
   CircleHelp,
 } from 'lucide-react'
-import { MODES } from 'shared/languages'
+import { LANGUAGES, DEFAULT_LANGUAGE, ALL_MODES, generateModes, displayLabel } from 'shared/languages'
 
 const { App } = window
 
@@ -47,7 +47,8 @@ function timeAgo(ts: number) {
 export function MainScreen() {
   const [view, setView] = useState<View>('main')
   const [status, setStatus] = useState<Status>('idle')
-  const [mode, setMode] = useState('pt-BR>en-US')
+  const [mode, setMode] = useState('en-US>en-US')
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([DEFAULT_LANGUAGE])
   const [lastResult, setLastResult] = useState('')
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
@@ -99,6 +100,7 @@ export function MainScreen() {
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
       setContext(data.context)
+      setSelectedLanguages(data.selectedLanguages)
       setHistory(data.history)
       setAppVersion(version)
       await initAudioStream(data.deviceId)
@@ -242,6 +244,23 @@ export function MainScreen() {
     await App.storeSet('context', value)
   }
 
+  const handleLanguageToggle = async (locale: string) => {
+    if (locale === DEFAULT_LANGUAGE) return
+    const updated = selectedLanguages.includes(locale)
+      ? selectedLanguages.filter((l) => l !== locale)
+      : [...selectedLanguages, locale]
+    setSelectedLanguages(updated)
+    await App.storeSet('selectedLanguages', updated)
+
+    // Reset mode if current mode uses a deselected language
+    const [from, to] = mode.split('>')
+    if (!updated.includes(from) || !updated.includes(to)) {
+      const fallback = `${DEFAULT_LANGUAGE}>${DEFAULT_LANGUAGE}`
+      setMode(fallback)
+      await App.storeSet('mode', fallback)
+    }
+  }
+
   const handleDeleteEntry = async (id: string) => {
     await App.deleteHistoryEntry(id)
     setHistory((prev) => prev.filter((e) => e.id !== id))
@@ -298,6 +317,37 @@ export function MainScreen() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] text-white/50 mb-1 block">
+                Languages
+              </label>
+              <div className="space-y-1">
+                {Object.keys(LANGUAGES).map((locale) => {
+                  const isDefault = locale === DEFAULT_LANGUAGE
+                  const isSelected = selectedLanguages.includes(locale)
+                  return (
+                    <label
+                      key={locale}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
+                        isSelected ? 'bg-white/10' : 'bg-white/5 hover:bg-white/[0.07]'
+                      } ${isDefault ? 'opacity-70 cursor-default' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        disabled={isDefault}
+                        onChange={() => handleLanguageToggle(locale)}
+                        className="accent-blue-500 rounded"
+                      />
+                      <span className="text-sm text-white/80">
+                        {displayLabel(locale)}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
             </div>
 
             <div>
@@ -367,7 +417,7 @@ export function MainScreen() {
                       {entry.text}
                     </p>
                     <p className="text-[11px] text-white/30">
-                      {MODES.find((m) => m.value === entry.mode)?.label} ·{' '}
+                      {ALL_MODES.find((m) => m.value === entry.mode)?.label} ·{' '}
                       {timeAgo(entry.timestamp)}
                     </p>
                   </div>
@@ -487,7 +537,7 @@ export function MainScreen() {
                 onChange={(e) => handleModeChange(e.target.value)}
                 className="bg-white/5 border border-white/10 rounded-md px-1.5 py-0.5 text-[11px] text-white/70 outline-none cursor-pointer hover:bg-white/10 transition-colors"
               >
-                {MODES.map((m) => (
+                {generateModes(selectedLanguages).map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
                   </option>
