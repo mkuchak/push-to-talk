@@ -32,6 +32,7 @@ const API = {
       apiKey: string
       mode: string
       deviceId: string
+      context: string
       history: Array<{
         id: string
         text: string

@@ -57,6 +57,7 @@ export function MainScreen() {
   const [history, setHistory] = useState<
     Array<{ id: string; text: string; mode: string; timestamp: number }>
   >([])
+  const [context, setContext] = useState('')
   const [appVersion, setAppVersion] = useState('')
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -97,6 +98,7 @@ export function MainScreen() {
       setMode(data.mode)
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
+      setContext(data.context)
       setHistory(data.history)
       setAppVersion(version)
       await initAudioStream(data.deviceId)
@@ -235,6 +237,11 @@ export function MainScreen() {
     await App.storeSet('apiKey', key)
   }
 
+  const handleContextSave = async (value: string) => {
+    setContext(value)
+    await App.storeSet('context', value)
+  }
+
   const handleDeleteEntry = async (id: string) => {
     await App.deleteHistoryEntry(id)
     setHistory((prev) => prev.filter((e) => e.id !== id))
@@ -291,6 +298,22 @@ export function MainScreen() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] text-white/50 mb-1 block">
+                Optional Context
+              </label>
+              <textarea
+                value={context}
+                onChange={(e) => handleContextSave(e.target.value)}
+                placeholder="e.g., I am a full-stack software engineer..."
+                rows={3}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/25 transition-colors resize-none"
+              />
+              <p className="text-[11px] text-white/30 mt-0.5">
+                Helps the AI recognize domain-specific terms
+              </p>
             </div>
 
             {appVersion && (

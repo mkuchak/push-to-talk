@@ -11,6 +11,7 @@ interface StoreSchema {
   apiKey: string
   mode: string
   deviceId: string
+  context: string
   history: HistoryEntry[]
 }
 
@@ -20,6 +21,7 @@ export const store = new Store<StoreSchema>({
     apiKey: '',
     mode: 'pt-BR>en-US',
     deviceId: 'default',
+    context: '',
     history: [],
   },
 })

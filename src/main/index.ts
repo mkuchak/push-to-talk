@@ -256,6 +256,7 @@ makeAppWithSingleInstanceLock(async () => {
     apiKey: store.get('apiKey'),
     mode: store.get('mode'),
     deviceId: store.get('deviceId'),
+    context: store.get('context'),
     history: store.get('history'),
   }))
 
