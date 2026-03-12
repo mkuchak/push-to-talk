@@ -154,13 +154,9 @@ makeAppWithSingleInstanceLock(async () => {
     },
   })
 
-  // Show on first launch (no API key configured yet)
-  const hasApiKey = !!store.get('apiKey')
+  // Always show window on launch
   mainWindow.webContents.on('did-finish-load', () => {
-    if (!hasApiKey) {
-      mainWindow?.show()
-      ensureDockHidden()
-    }
+    showWindowOnCurrentScreen(true)
   })
 
   // Hide instead of close
