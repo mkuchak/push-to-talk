@@ -9,6 +9,7 @@ import {
   Loader2,
   X,
   Trash2,
+  CircleHelp,
 } from 'lucide-react'
 import { MODES } from 'shared/languages'
 
@@ -32,7 +33,7 @@ function playTone(freq: number, endFreq: number, duration = 80) {
   setTimeout(() => ctx.close(), duration + 50)
 }
 
-type View = 'main' | 'settings' | 'history'
+type View = 'main' | 'settings' | 'history' | 'shortcuts'
 type Status = 'idle' | 'recording' | 'processing'
 
 function timeAgo(ts: number) {
@@ -361,6 +362,53 @@ export function MainScreen() {
         </div>
       )}
 
+      {/* ── Shortcuts View ── */}
+      {view === 'shortcuts' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setView('main')}
+              className="p-1 rounded-md hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft size={16} className="text-white/70" />
+            </button>
+            <span className="text-sm font-medium text-white/90">
+              Shortcuts
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {[
+              { keys: ['Right ⌘', 'Right ⌥'], desc: 'Hold to record' },
+              { keys: ['Release either key'], desc: 'Stop & transcribe' },
+              { keys: ['Right ⌘', 'Right ⌥', 'Right ⇧'], desc: 'Show / hide window' },
+              { keys: ['Right ⌘', 'Right ⌥', '/'], desc: 'Cancel recording' },
+            ].map((s) => (
+              <div
+                key={s.desc}
+                className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg bg-white/5"
+              >
+                <span className="text-sm text-white/80">{s.desc}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {s.keys.map((k, i) => (
+                    <span key={k} className="flex items-center gap-1">
+                      {i > 0 && <span className="text-white/30 text-xs">+</span>}
+                      <kbd className="text-xs text-white/90 bg-white/15 border border-white/10 px-2 py-0.5 rounded-md font-medium inline-flex items-center gap-1.5">
+                        {k.split(/([⌘⌥⇧\/])/).map((part, j) =>
+                          /^[⌘⌥⇧\/]$/.test(part)
+                            ? <span key={j} className="text-base leading-none">{part}</span>
+                            : <span key={j}>{part}</span>
+                        )}
+                      </kbd>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Main View ── */}
       {view === 'main' && (
         <>
@@ -436,6 +484,17 @@ export function MainScreen() {
                 title="History"
               >
                 <Clock size={14} className="text-white/40" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setView('shortcuts')
+                  App.showWindow()
+                }}
+                className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+                title="Shortcuts"
+              >
+                <CircleHelp size={14} className="text-white/40" />
               </button>
             </div>
           </div>
