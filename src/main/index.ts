@@ -57,6 +57,15 @@ let mainWindow: BrowserWindow | null = null
 let isQuitting = false
 let isShowingWindow = false
 
+/** Re-enforce accessory policy after any show()/focus() call */
+function ensureDockHidden() {
+  if (!PLATFORM.IS_MAC) return
+  setTimeout(() => {
+    app.dock.hide()
+    app.setActivationPolicy('accessory')
+  }, 50)
+}
+
 function showWindowOnCurrentScreen(stealFocus = false) {
   if (!mainWindow) return
 
@@ -98,6 +107,8 @@ function showWindowOnCurrentScreen(stealFocus = false) {
     mainWindow.showInactive()
   }
 
+  ensureDockHidden()
+
   // Pin to current Space after a delay so macOS finishes placing the window
   if (PLATFORM.IS_MAC) {
     setTimeout(() => {
@@ -121,8 +132,11 @@ makeAppWithSingleInstanceLock(async () => {
     } catch {}
   }
 
-  // Hide from dock — app lives in the tray
-  if (PLATFORM.IS_MAC) app.dock.hide()
+  // Hide from dock — app lives in the tray (use both mechanisms for reliability)
+  if (PLATFORM.IS_MAC) {
+    app.dock.hide()
+    app.setActivationPolicy('accessory')
+  }
 
   mainWindow = await MainWindow()
 
@@ -143,7 +157,10 @@ makeAppWithSingleInstanceLock(async () => {
   // Show on first launch (no API key configured yet)
   const hasApiKey = !!store.get('apiKey')
   mainWindow.webContents.on('did-finish-load', () => {
-    if (!hasApiKey) mainWindow?.show()
+    if (!hasApiKey) {
+      mainWindow?.show()
+      ensureDockHidden()
+    }
   })
 
   // Hide instead of close
@@ -187,7 +204,10 @@ makeAppWithSingleInstanceLock(async () => {
     })
   } catch (err) {
     console.error('Key listener setup failed:', err)
-    mainWindow?.webContents.on('did-finish-load', () => mainWindow?.show())
+    mainWindow?.webContents.on('did-finish-load', () => {
+      mainWindow?.show()
+      ensureDockHidden()
+    })
   }
 
   // macOS: hide window when user switches Spaces (virtual desktops)
