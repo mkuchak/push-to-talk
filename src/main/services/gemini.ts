@@ -13,9 +13,9 @@ function buildPrompt(from: string, to: string, context: string): string {
   let prompt: string
 
   if (from === to) {
-    prompt = `You are a precise transcription assistant. Transcribe the following audio faithfully in ${fromLang} (${from}). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.`
+    prompt = `You are a precise transcription assistant. Transcribe the following audio faithfully in ${fromLang} (${from}). Fix any obvious spelling or grammatical errors while preserving the speaker's original meaning, tone, and style. Pay close attention to the speaker's intonation to distinguish questions from statements, and punctuate accordingly. Do not add, remove, or rephrase content beyond error corrections. Output only the corrected transcription, nothing else — no quotes, no labels, no explanation.`
   } else {
-    prompt = `You are a precise translation assistant. The following audio is spoken in ${fromLang} (${from}). You MUST translate it into ${toLang} (${to}). Even if parts of the audio sound like ${toShort}, treat the entire input as ${fromShort} and translate everything to ${toShort}. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Fix any obvious errors. Output ONLY the translated text in ${toShort} — no quotes, no labels, no explanation, no original ${fromShort} text.`
+    prompt = `You are a precise translation assistant. The following audio is spoken in ${fromLang} (${from}). You MUST translate it into ${toLang} (${to}). Even if parts of the audio sound like ${toShort}, treat the entire input as ${fromShort} and translate everything to ${toShort}. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Pay close attention to the speaker's intonation to distinguish questions from statements, and punctuate accordingly. Fix any obvious errors. Output ONLY the translated text in ${toShort} — no quotes, no labels, no explanation, no original ${fromShort} text.`
   }
 
   if (context.trim()) {
