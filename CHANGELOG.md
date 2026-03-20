@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0](https://github.com/mkuchak/push-to-talk/compare/v0.9.0...v0.10.0) (2026-03-20)
+
+### Features
+
+* **prompt:** add intonation-aware punctuation instruction ([0779ded](https://github.com/mkuchak/push-to-talk/commit/0779dedb8383624d6279e6b691b671a2ab17d3da))
+
 ## [0.9.0](https://github.com/mkuchak/push-to-talk/compare/v0.8.0...v0.9.0) (2026-03-12)
 
 ### Features
