@@ -33,6 +33,30 @@ function playTone(freq: number, endFreq: number, duration = 80) {
   setTimeout(() => ctx.close(), duration + 50)
 }
 
+function playTwoTone(freq1: number, freq2: number, noteDur = 50, gap = 15) {
+  const ctx = new AudioContext()
+  const dur = noteDur / 1000
+  const gapDur = gap / 1000
+  const now = ctx.currentTime
+
+  for (const { freq, start } of [
+    { freq: freq1, start: now },
+    { freq: freq2, start: now + dur + gapDur },
+  ]) {
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = freq
+    gain.gain.setValueAtTime(0.35, start)
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur)
+    osc.connect(gain).connect(ctx.destination)
+    osc.start(start)
+    osc.stop(start + dur)
+  }
+
+  setTimeout(() => ctx.close(), noteDur * 2 + gap + 50)
+}
+
 type View = 'main' | 'settings' | 'history' | 'shortcuts'
 type Status = 'idle' | 'recording' | 'processing'
 
@@ -60,6 +84,8 @@ export function MainScreen() {
   >([])
   const [context, setContext] = useState('')
   const [appVersion, setAppVersion] = useState('')
+  const [slotA, setSlotA] = useState('')
+  const [slotB, setSlotB] = useState('')
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -103,6 +129,8 @@ export function MainScreen() {
       setSelectedLanguages(data.selectedLanguages)
       setHistory(data.history)
       setAppVersion(version)
+      setSlotA(data.slotA)
+      setSlotB(data.slotB)
       await initAudioStream(data.deviceId)
       const allDevices = await navigator.mediaDevices.enumerateDevices()
       setDevices(allDevices.filter((d) => d.kind === 'audioinput'))
@@ -210,10 +238,21 @@ export function MainScreen() {
     const unsubStart = App.onRecordingStart(() => startRef.current())
     const unsubStop = App.onRecordingStop(() => stopRef.current())
     const unsubCancel = App.onRecordingCancel(() => cancelRef.current())
+    const unsubMode = App.onModeChanged((e) => {
+      if (e.empty) {
+        playTone(400, 250, 120)
+        return
+      }
+      // Slot A = ascending C5 → C6 octave, Slot B = descending C6 → C5
+      if (e.slot === 'A') playTwoTone(523, 1047, 50, 15)
+      else if (e.slot === 'B') playTwoTone(1047, 523, 50, 15)
+      if (e.mode) setMode(e.mode)
+    })
     return () => {
       unsubStart()
       unsubStop()
       unsubCancel()
+      unsubMode()
     }
   }, [])
 
@@ -259,6 +298,28 @@ export function MainScreen() {
       setMode(fallback)
       await App.storeSet('mode', fallback)
     }
+
+    // Reset any slot that references a deselected language
+    const resetIfInvalid = async (
+      key: 'slotA' | 'slotB',
+      value: string,
+      setter: (v: string) => void,
+    ) => {
+      if (!value) return
+      const [f, t] = value.split('>')
+      if (!updated.includes(f) || !updated.includes(t)) {
+        setter('')
+        await App.storeSet(key, '')
+      }
+    }
+    await resetIfInvalid('slotA', slotA, setSlotA)
+    await resetIfInvalid('slotB', slotB, setSlotB)
+  }
+
+  const handleSlotChange = async (slot: 'A' | 'B', value: string) => {
+    if (slot === 'A') setSlotA(value)
+    else setSlotB(value)
+    await App.storeSet(slot === 'A' ? 'slotA' : 'slotB', value)
   }
 
   const handleDeleteEntry = async (id: string) => {
@@ -345,6 +406,39 @@ export function MainScreen() {
                         {displayLabel(locale)}
                       </span>
                     </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] text-white/50 mb-1 block">
+                Toggle Slots
+              </label>
+              <p className="text-[11px] text-white/30 mb-1.5">
+                Double-tap Right ⌥ to swap between Slot A and Slot B
+              </p>
+              <div className="space-y-1">
+                {(['A', 'B'] as const).map((slot) => {
+                  const value = slot === 'A' ? slotA : slotB
+                  return (
+                    <div key={slot} className="flex items-center gap-2">
+                      <span className="text-[11px] text-white/50 w-10 shrink-0">
+                        Slot {slot}
+                      </span>
+                      <select
+                        value={value}
+                        onChange={(e) => handleSlotChange(slot, e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-white/25 transition-colors cursor-pointer"
+                      >
+                        <option value="">Not set</option>
+                        {generateModes(selectedLanguages).map((m) => (
+                          <option key={m.value} value={m.value}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )
                 })}
               </div>
@@ -463,6 +557,7 @@ export function MainScreen() {
               { keys: ['Release either key'], desc: 'Stop & transcribe' },
               { keys: ['Right ⌥', 'Right ⇧'], desc: 'Show / hide window' },
               { keys: ['Right ⌘', 'Right ⌥', '/'], desc: 'Cancel recording' },
+              { keys: ['Double tap Right ⌥'], desc: 'Toggle slot' },
             ].map((s) => (
               <div
                 key={s.desc}

@@ -204,6 +204,26 @@ makeAppWithSingleInstanceLock(async () => {
           showWindowOnCurrentScreen()
         }
       },
+      onToggleSlot: () => {
+        const slotA = store.get('slotA')
+        const slotB = store.get('slotB')
+        const active = store.get('activeSlot')
+        const next: 'A' | 'B' = active === 'A' ? 'B' : 'A'
+        const target = next === 'A' ? slotA : slotB
+
+        if (!target) {
+          mainWindow?.webContents.send('mode:changed', { empty: true })
+          return
+        }
+
+        store.set('mode', target)
+        store.set('activeSlot', next)
+        mainWindow?.webContents.send('mode:changed', {
+          empty: false,
+          mode: target,
+          slot: next,
+        })
+      },
     })
   } catch (err) {
     console.error('Key listener setup failed:', err)
@@ -259,6 +279,9 @@ makeAppWithSingleInstanceLock(async () => {
     context: store.get('context'),
     selectedLanguages: store.get('selectedLanguages'),
     history: store.get('history'),
+    slotA: store.get('slotA'),
+    slotB: store.get('slotB'),
+    activeSlot: store.get('activeSlot'),
   }))
 
   ipcMain.handle('store:delete-history-entry', (_, id: string) => {

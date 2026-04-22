@@ -14,6 +14,9 @@ interface StoreSchema {
   context: string
   selectedLanguages: string[]
   history: HistoryEntry[]
+  slotA: string
+  slotB: string
+  activeSlot: 'A' | 'B'
 }
 
 export const store = new Store<StoreSchema>({
@@ -25,8 +28,17 @@ export const store = new Store<StoreSchema>({
     context: '',
     selectedLanguages: ['en-US'],
     history: [],
+    slotA: '',
+    slotB: '',
+    activeSlot: 'A',
   },
 })
+
+// Seed Slot A from the current mode on first run / upgrade so the shortcut
+// has one working slot out of the box.
+if (!store.get('slotA')) {
+  store.set('slotA', store.get('mode'))
+}
 
 export function addToHistory(text: string, mode: string) {
   const history = store.get('history')

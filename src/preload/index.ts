@@ -40,6 +40,9 @@ const API = {
         mode: string
         timestamp: number
       }>
+      slotA: string
+      slotB: string
+      activeSlot: 'A' | 'B'
     }>,
 
   // App info
@@ -75,6 +78,19 @@ const API = {
     ipcRenderer.on('recording:cancel', handler)
     return () => {
       ipcRenderer.removeListener('recording:cancel', handler)
+    }
+  },
+
+  onModeChanged: (
+    callback: (e: { empty: boolean; mode?: string; slot?: 'A' | 'B' }) => void,
+  ) => {
+    const handler = (
+      _: unknown,
+      data: { empty: boolean; mode?: string; slot?: 'A' | 'B' },
+    ) => callback(data)
+    ipcRenderer.on('mode:changed', handler)
+    return () => {
+      ipcRenderer.removeListener('mode:changed', handler)
     }
   },
 }
