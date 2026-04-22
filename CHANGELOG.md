@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/mkuchak/push-to-talk/compare/v0.10.0...v0.11.0) (2026-04-22)
+
+### Features
+
+* **shortcuts:** add two-slot mode toggle with double-tap Right Alt ([bb703f4](https://github.com/mkuchak/push-to-talk/commit/bb703f40f812b5fa3b6d8eb22717677d33068221))
+* **transcribe:** auto-retry with preserved-audio manual retry ([9ae89b7](https://github.com/mkuchak/push-to-talk/commit/9ae89b70af7ff14375ac872342950cfdefc02644))
+
 ## [0.10.0](https://github.com/mkuchak/push-to-talk/compare/v0.9.0...v0.10.0) (2026-03-20)
 
 ### Features
