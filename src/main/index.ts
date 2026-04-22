@@ -11,6 +11,7 @@ import { transcribeAudio } from './services/gemini'
 import { pasteText } from './services/paste'
 import { setupKeyListener } from './services/key-listener'
 import { setupTray } from './services/tray'
+import { withRetry, isRetryable } from './services/retry'
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 
@@ -255,12 +256,31 @@ makeAppWithSingleInstanceLock(async () => {
 
   ipcMain.handle(
     'transcribe',
-    async (_, audioBase64: string, mimeType: string) => {
-      const mode = store.get('mode')
-      const text = await transcribeAudio(audioBase64, mimeType, mode)
-      addToHistory(text, mode)
-      const pasted = await pasteText(text)
-      return { text, pasted }
+    async (_, audioBase64: string, mimeType: string, modeOverride?: string) => {
+      const mode = modeOverride || store.get('mode')
+      try {
+        const { value: text } = await withRetry(
+          () => transcribeAudio(audioBase64, mimeType, mode),
+          {
+            attempts: 3,
+            backoffMs: [500, 1200],
+            jitter: 0.2,
+            retryAfterCapMs: 3000,
+            isRetryable,
+            onAttempt: (attempt) =>
+              mainWindow?.webContents.send('transcribe:attempt', { attempt }),
+          },
+        )
+        addToHistory(text, mode)
+        const pasted = await pasteText(text)
+        return { text, pasted }
+      } catch (err) {
+        const inner =
+          err instanceof Error ? err.message : 'Transcription failed'
+        const n = (err as { attemptsMade?: number } | null)?.attemptsMade ?? 1
+        const label = n === 1 ? 'attempt' : 'attempts'
+        throw new Error(`Failed after ${n} ${label}: ${inner}`)
+      }
     },
   )
 

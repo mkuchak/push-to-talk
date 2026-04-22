@@ -8,8 +8,13 @@ declare global {
 
 const API = {
   // Transcription
-  transcribe: (audioBase64: string, mimeType: string) =>
-    ipcRenderer.invoke('transcribe', audioBase64, mimeType) as Promise<{
+  transcribe: (audioBase64: string, mimeType: string, modeOverride?: string) =>
+    ipcRenderer.invoke(
+      'transcribe',
+      audioBase64,
+      mimeType,
+      modeOverride,
+    ) as Promise<{
       text: string
       pasted: boolean
     }>,
@@ -91,6 +96,14 @@ const API = {
     ipcRenderer.on('mode:changed', handler)
     return () => {
       ipcRenderer.removeListener('mode:changed', handler)
+    }
+  },
+
+  onTranscribeAttempt: (callback: (e: { attempt: number }) => void) => {
+    const handler = (_: unknown, data: { attempt: number }) => callback(data)
+    ipcRenderer.on('transcribe:attempt', handler)
+    return () => {
+      ipcRenderer.removeListener('transcribe:attempt', handler)
     }
   },
 }

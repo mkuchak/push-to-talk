@@ -10,10 +10,20 @@ import {
   X,
   Trash2,
   CircleHelp,
+  RotateCw,
 } from 'lucide-react'
 import { LANGUAGES, DEFAULT_LANGUAGE, ALL_MODES, generateModes, displayLabel } from 'shared/languages'
 
 const { App } = window
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onloadend = () =>
+      resolve((reader.result as string).split(',')[1])
+    reader.readAsDataURL(blob)
+  })
+}
 
 function playTone(freq: number, endFreq: number, duration = 80) {
   const ctx = new AudioContext()
@@ -86,11 +96,18 @@ export function MainScreen() {
   const [appVersion, setAppVersion] = useState('')
   const [slotA, setSlotA] = useState('')
   const [slotB, setSlotB] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const [failedAudio, setFailedAudio] = useState<{
+    blob: Blob
+    mimeType: string
+    mode: string
+  } | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const generationRef = useRef(0)
 
   const initAudioStream = useCallback(async (deviceId: string) => {
     if (streamRef.current) {
@@ -162,6 +179,8 @@ export function MainScreen() {
     if (!streamRef.current) return
     playTone(600, 900)
     setError('')
+    setFailedAudio(null)
+    generationRef.current++
     chunksRef.current = []
     const recorder = new MediaRecorder(streamRef.current)
     recorder.ondataavailable = (e) => {
@@ -177,6 +196,10 @@ export function MainScreen() {
     if (!recorder || recorder.state !== 'recording') return
     playTone(900, 500)
     setStatus('processing')
+    setAttempt(1)
+
+    const gen = generationRef.current
+    const recordedMode = mode
 
     const blob = await new Promise<Blob>((resolve) => {
       recorder.onstop = () =>
@@ -185,34 +208,72 @@ export function MainScreen() {
     })
 
     if (blob.size === 0) {
-      setStatus('idle')
+      if (generationRef.current === gen) {
+        setStatus('idle')
+        setAttempt(0)
+      }
       return
     }
 
     try {
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () =>
-          resolve((reader.result as string).split(',')[1])
-        reader.readAsDataURL(blob)
-      })
+      const base64 = await blobToBase64(blob)
+      const result = await App.transcribe(base64, blob.type, recordedMode)
 
-      const result = await App.transcribe(base64, blob.type)
+      if (generationRef.current !== gen) return
+
       setLastResult(result.text)
+      setFailedAudio(null)
 
-      if (!result.pasted) {
-        App.showWindow()
-      }
+      if (!result.pasted) App.showWindow()
 
       const data = await App.getAll()
       setHistory(data.history)
     } catch (err: any) {
+      if (generationRef.current !== gen) return
+      setError(err.message || 'Transcription failed')
+      setFailedAudio({ blob, mimeType: blob.type, mode: recordedMode })
+      App.showWindow()
+    } finally {
+      if (generationRef.current === gen) {
+        setStatus('idle')
+        setAttempt(0)
+      }
+    }
+  }, [mode])
+
+  const handleRetry = useCallback(async () => {
+    const target = failedAudio
+    if (!target) return
+
+    setError('')
+    setStatus('processing')
+    setAttempt(1)
+    const gen = ++generationRef.current
+
+    try {
+      const base64 = await blobToBase64(target.blob)
+      const result = await App.transcribe(base64, target.mimeType, target.mode)
+
+      if (generationRef.current !== gen) return
+
+      setLastResult(result.text)
+      setFailedAudio(null)
+
+      if (!result.pasted) App.showWindow()
+
+      const data = await App.getAll()
+      setHistory(data.history)
+    } catch (err: any) {
+      if (generationRef.current !== gen) return
       setError(err.message || 'Transcription failed')
       App.showWindow()
     } finally {
-      setStatus('idle')
+      if (generationRef.current === gen) {
+        setStatus('idle')
+        setAttempt(0)
+      }
     }
-  }, [])
+  }, [failedAudio])
 
   const cancelRecording = useCallback(() => {
     playTone(400, 250, 120)
@@ -248,11 +309,13 @@ export function MainScreen() {
       else if (e.slot === 'B') playTwoTone(1047, 523, 50, 15)
       if (e.mode) setMode(e.mode)
     })
+    const unsubAttempt = App.onTranscribeAttempt((e) => setAttempt(e.attempt))
     return () => {
       unsubStart()
       unsubStop()
       unsubCancel()
       unsubMode()
+      unsubAttempt()
     }
   }, [])
 
@@ -610,7 +673,9 @@ export function MainScreen() {
                     size={12}
                     className="animate-spin text-blue-400"
                   />
-                  <span className="text-xs text-blue-400 font-medium">Processing...</span>
+                  <span className="text-xs text-blue-400 font-medium">
+                    {attempt >= 2 ? `Retrying... (${attempt}/3)` : 'Processing...'}
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 px-0.5">
@@ -678,8 +743,20 @@ export function MainScreen() {
           {error && (
             <div className="mt-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-2.5 py-1.5">
               <span className="text-xs text-red-400 flex-1">{error}</span>
+              {failedAudio && (
+                <button
+                  onClick={handleRetry}
+                  className="p-0.5 hover:bg-white/10 rounded"
+                  title="Retry transcription"
+                >
+                  <RotateCw size={12} className="text-red-400" />
+                </button>
+              )}
               <button
-                onClick={() => setError('')}
+                onClick={() => {
+                  setError('')
+                  setFailedAudio(null)
+                }}
                 className="p-0.5 hover:bg-white/10 rounded"
               >
                 <X size={12} className="text-red-400" />
