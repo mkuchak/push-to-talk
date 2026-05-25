@@ -5,8 +5,10 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: 'node',
-    testTimeout: 60000,
+    testTimeout: 60_000,
     include: ['test/**/*.test.ts'],
+    exclude: ['**/node_modules/**'],
     setupFiles: ['./test/setup.ts'],
+    passWithNoTests: true,
   },
 })
