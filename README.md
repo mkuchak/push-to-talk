@@ -112,9 +112,10 @@ Creates the `.dmg` distributable in `dist/`.
 1. Launch the app — it appears as a tray icon
 2. Click the tray icon to open the window
 3. Go to **Settings** and enter your Gemini API key
-4. Select your preferred languages
-5. Optionally add context to improve transcription accuracy
-6. Hold **Right Cmd + Right Alt** and start talking
+4. Optionally change the Gemini model (defaults to `gemini-3.5-flash-lite`)
+5. Select your preferred languages
+6. Optionally add context to improve transcription accuracy
+7. Hold **Right Cmd + Right Alt** and start talking
 
 ## How It Works
 
@@ -164,7 +165,7 @@ src/
 | Framework | Electron 39 |
 | UI | React 19, Tailwind CSS 4, Lucide icons |
 | Language | TypeScript 5.9 (strict) |
-| AI | Google Gemini (`gemini-3.1-flash-lite-preview`) |
+| AI | Google Gemini (configurable model, default `gemini-3.5-flash-lite`) |
 | Build | electron-vite, Vite 7, electron-builder |
 | Storage | electron-store |
 | Input | uiohook-napi (native keyboard hooks) |
