@@ -13,6 +13,7 @@ import {
   RotateCw,
 } from 'lucide-react'
 import { LANGUAGES, DEFAULT_LANGUAGE, ALL_MODES, generateModes, displayLabel } from 'shared/languages'
+import { DEFAULT_GEMINI_MODEL } from 'shared/constants'
 
 const { App } = window
 
@@ -87,6 +88,7 @@ export function MainScreen() {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('')
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDevice, setSelectedDevice] = useState('default')
   const [history, setHistory] = useState<
@@ -142,6 +144,7 @@ export function MainScreen() {
       setMode(data.mode)
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
+      setModel(data.model)
       setContext(data.context)
       setSelectedLanguages(data.selectedLanguages)
       setHistory(data.history)
@@ -341,6 +344,11 @@ export function MainScreen() {
     await App.storeSet('apiKey', key)
   }
 
+  const handleModelSave = async (value: string) => {
+    setModel(value)
+    await App.storeSet('model', value)
+  }
+
   const handleContextSave = async (value: string) => {
     setContext(value)
     await App.storeSet('context', value)
@@ -423,6 +431,22 @@ export function MainScreen() {
                 placeholder="Enter your API key..."
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/25 transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="text-[11px] text-white/50 mb-1 block">
+                Gemini Model
+              </label>
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => handleModelSave(e.target.value)}
+                placeholder={DEFAULT_GEMINI_MODEL}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/25 transition-colors"
+              />
+              <p className="text-[11px] text-white/30 mt-0.5">
+                e.g. {DEFAULT_GEMINI_MODEL} or gemini-3.6-flash
+              </p>
             </div>
 
             <div>

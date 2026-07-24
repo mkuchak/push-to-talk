@@ -7,3 +7,5 @@ export const PLATFORM = {
   IS_WINDOWS: process.platform === 'win32',
   IS_LINUX: process.platform === 'linux',
 }
+
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite'

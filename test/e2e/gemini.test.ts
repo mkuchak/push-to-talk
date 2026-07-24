@@ -4,7 +4,7 @@
  * Requires GEMINI_API_KEY in `.env.test` (auto-loaded by test/setup.ts).
  * Tests are skipped automatically if the key is missing.
  *
- * Cost per `pnpm test` run: ~2 API calls on gemini-3.1-flash-lite, well under
+ * Cost per `pnpm test` run: ~2 API calls on gemini-3.5-flash-lite, well under
  * a cent. The audio fixture is `test/fixtures/audio/recording-pt-br.webm` — a
  * ~13-second Brazilian Portuguese clip whose content is documented in
  * `test/fixtures/audio/README.md`.
@@ -17,6 +17,7 @@ vi.mock('../../src/main/services/store', () => ({
   store: {
     get: (key: string) => {
       if (key === 'apiKey') return process.env.GEMINI_API_KEY ?? ''
+      if (key === 'model') return 'gemini-3.5-flash-lite'
       if (key === 'context') return ''
       return undefined
     },

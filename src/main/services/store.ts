@@ -1,5 +1,7 @@
 import Store from 'electron-store'
 
+import { DEFAULT_GEMINI_MODEL } from 'shared/constants'
+
 interface HistoryEntry {
   id: string
   text: string
@@ -9,6 +11,7 @@ interface HistoryEntry {
 
 interface StoreSchema {
   apiKey: string
+  model: string
   mode: string
   deviceId: string
   context: string
@@ -23,6 +26,7 @@ export const store = new Store<StoreSchema>({
   name: 'push-to-talk',
   defaults: {
     apiKey: '',
+    model: DEFAULT_GEMINI_MODEL,
     mode: 'en-US>en-US',
     deviceId: 'default',
     context: '',

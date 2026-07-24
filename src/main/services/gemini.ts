@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 
+import { DEFAULT_GEMINI_MODEL } from 'shared/constants'
 import { LANGUAGES } from 'shared/languages'
 
 import { store } from './store'
@@ -42,6 +43,7 @@ export async function transcribeAudio(
   }
 
   const context = store.get('context')
+  const model = store.get('model').trim() || DEFAULT_GEMINI_MODEL
   const ai = new GoogleGenAI({ apiKey })
 
   // Google's officially supported audio MIMEs don't include audio/webm.
@@ -52,7 +54,7 @@ export async function transcribeAudio(
     : mimeType
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
+    model,
     contents: [
       { text: getPrompt(mode, context) },
       { inlineData: { data: audioBase64, mimeType: normalizedMime } },

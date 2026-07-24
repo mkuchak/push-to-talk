@@ -294,6 +294,7 @@ makeAppWithSingleInstanceLock(async () => {
 
   ipcMain.handle('store:get-all', () => ({
     apiKey: store.get('apiKey'),
+    model: store.get('model'),
     mode: store.get('mode'),
     deviceId: store.get('deviceId'),
     context: store.get('context'),

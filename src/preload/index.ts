@@ -35,6 +35,7 @@ const API = {
   getAll: () =>
     ipcRenderer.invoke('store:get-all') as Promise<{
       apiKey: string
+      model: string
       mode: string
       deviceId: string
       context: string
