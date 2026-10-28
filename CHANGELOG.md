@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.0](https://github.com/mkuchak/push-to-talk/compare/v0.11.1...v0.12.0) (2026-10-28)
+
+### Features
+
+* **settings:** add configurable Gemini model field ([36267b1](https://github.com/mkuchak/push-to-talk/commit/36267b17b705b7ef4c96ed4191f80bb666f0d976))
+* **whisper:** add optional local Whisper transcription ([c54ebe3](https://github.com/mkuchak/push-to-talk/commit/c54ebe3e668ff9e1915219a5308ca8acce91cef9))
+
+### Bug Fixes
+
+* **main:** guard app.dock, which is undefined off macOS ([a324c6e](https://github.com/mkuchak/push-to-talk/commit/a324c6e775321d71e0a6e0555266c8ab4bd1256a))
+
 ## [0.11.1](https://github.com/mkuchak/push-to-talk/compare/v0.11.0...v0.11.1) (2026-05-25)
 
 ### Bug Fixes
