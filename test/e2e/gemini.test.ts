@@ -4,7 +4,7 @@
  * Requires GEMINI_API_KEY in `.env.test` (auto-loaded by test/setup.ts).
  * Tests are skipped automatically if the key is missing.
  *
- * Cost per `pnpm test` run: ~2 API calls on gemini-3.5-flash-lite, well under
+ * Cost per `pnpm test` run: ~3 API calls on gemini-3.5-flash-lite, well under
  * a cent. The audio fixture is `test/fixtures/audio/recording-pt-br.webm` — a
  * ~13-second Brazilian Portuguese clip whose content is documented in
  * `test/fixtures/audio/README.md`.
@@ -24,7 +24,7 @@ vi.mock('../../src/main/services/store', () => ({
   },
 }))
 
-import { transcribeAudio } from '../../src/main/services/gemini'
+import { polishTranscript, transcribeAudio } from '../../src/main/services/gemini'
 
 const fixturePath = resolve(__dirname, '..', 'fixtures', 'audio', 'recording-pt-br.webm')
 const audioBase64 = readFileSync(fixturePath).toString('base64')
@@ -81,6 +81,23 @@ describe.skipIf(!hasKey)('gemini E2E', () => {
 
       // No Portuguese diacritics: ensures full translation, not partial
       expect(out).not.toMatch(/[çãõ]/)
+    },
+    60_000,
+  )
+
+  it(
+    'polishes a raw local Whisper transcript without changing its content',
+    async () => {
+      const raw = 'eu tenho cinco maçãs e setenta e duas laranjas voce pode me ajudar amanha'
+      const out = await polishTranscript(raw, 'pt-BR')
+      console.error(`[polish pt-BR] ${out}`)
+
+      expect(out).toMatch(/\b5\b/)
+      expect(out).toMatch(/\b72\b/)
+      expect(out).toMatch(/você/)
+      expect(out).toMatch(/amanhã/)
+      expect(out).toMatch(/\?$/)
+      expect(out).toMatch(/laranjas/i)
     },
     60_000,
   )
