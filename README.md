@@ -48,6 +48,7 @@ The free tier is generous and more than enough for personal use.
 - **Auto-paste** — Transcribed text is automatically pasted into the active app
 - **Multi-language support** — Transcribe in 7 languages or translate between any combination
 - **Optional context** — Provide domain-specific context (e.g., "I am a software engineer") to improve accuracy with technical terms
+- **Optional local Whisper** — Transcribe same-language modes on your Mac with Whisper large-v3-turbo, offline and without an API key
 - **History** — Browse, copy, and manage your last 100 transcriptions
 - **Tray app** — Lives in the system tray, stays out of your way
 - **Auto-updates** — Receives updates automatically via GitHub Releases
@@ -65,6 +66,27 @@ The free tier is generous and more than enough for personal use.
 | Hindi | `hi-IN` |
 
 Select which languages you want in Settings. The app generates all possible transcription and translation combinations from your selection.
+
+## Local Whisper (optional)
+
+On Apple Silicon Macs, same-language modes (e.g. `pt-BR>pt-BR`, `en-US>en-US`) can run locally with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) and Whisper large-v3-turbo. Translations keep using Gemini. Nothing is downloaded unless you opt in.
+
+1. Open **Settings > Local Whisper**
+2. Pick a model: **Turbo q5_0** (574 MB, default) or **Turbo q8_0** (874 MB)
+3. Click **Download & set up**. It downloads the engine (~2 MB), a voice activity detector (~1 MB) and the model, verifies their checksums, and prepares the GPU once
+
+Settings:
+
+| Setting | What it does |
+|---------|--------------|
+| Use for same-language modes | Turn local transcription on or off without deleting anything |
+| Keep in memory | **Only while transcribing** loads the model when you press the shortcut and unloads it right after. **5 minutes after use** (default) keeps it warm between dictations. **Always** keeps it loaded |
+| Polish with Gemini | Sends the local transcript (text only) to Gemini to fix grammar, numerals and regional spelling, which Whisper can't do on its own. Needs an API key |
+| Remove | Stops the engine and deletes every downloaded file |
+
+The model loads in a fraction of a second and starts loading as soon as you press the shortcut, so even **Only while transcribing** adds little delay. While loaded, Turbo q5_0 uses about 700 MB of RAM; all of it is released when the engine stops. If local transcription fails and a Gemini API key is set, the app falls back to Gemini.
+
+Whisper transcribes what you say without Gemini's corrections: it won't fix grammar, and it can't tell regional variants apart (`pt-BR` and `pt-PT` are both `pt`). Your **Optional context** is used as vocabulary hints.
 
 ## Keyboard Shortcuts
 
@@ -130,7 +152,7 @@ Hold shortcut → Record audio → Release → Gemini transcribes → Auto-paste
 5. A simulated Cmd+V pastes it into the active app
 6. The result is saved to history
 
-When the source and target language are the same, Gemini performs a faithful transcription with grammar correction. When they differ, it translates while preserving the speaker's tone and intent.
+When the source and target language are the same, Gemini performs a faithful transcription with grammar correction. When they differ, it translates while preserving the speaker's tone and intent. With [local Whisper](#local-whisper-optional) enabled, same-language modes are transcribed on your Mac instead.
 
 ## Architecture
 
@@ -141,6 +163,8 @@ src/
 │   ├── windows/main.ts      # Window configuration
 │   └── services/
 │       ├── gemini.ts        # Google Gemini API integration
+│       ├── transcribe.ts    # Routes each request to local Whisper or Gemini
+│       ├── whisper/         # Optional local Whisper: installer, whisper-server lifecycle, prompts
 │       ├── key-listener.ts  # Global keyboard shortcuts (uiohook-napi)
 │       ├── paste.ts         # Cross-platform paste simulation
 │       ├── store.ts         # Persistent settings (electron-store)
@@ -152,6 +176,8 @@ src/
 │   └── globals.css          # Tailwind CSS theme
 ├── shared/
 │   ├── languages.ts         # Language definitions and mode generation
+│   ├── whisper.ts           # Local Whisper models, download sources and status types
+│   ├── wav.ts               # 16-bit PCM WAV encoder
 │   ├── constants.ts         # Platform and environment detection
 │   └── utils.ts             # Shared utilities
 └── lib/
@@ -165,7 +191,7 @@ src/
 | Framework | Electron 39 |
 | UI | React 19, Tailwind CSS 4, Lucide icons |
 | Language | TypeScript 5.9 (strict) |
-| AI | Google Gemini (configurable model, default `gemini-3.5-flash-lite`) |
+| AI | Google Gemini (configurable model, default `gemini-3.5-flash-lite`), optional local whisper.cpp |
 | Build | electron-vite, Vite 7, electron-builder |
 | Storage | electron-store |
 | Input | uiohook-napi (native keyboard hooks) |
@@ -183,6 +209,12 @@ src/
 | `pnpm lint:fix` | Auto-fix lint issues |
 | `pnpm typecheck` | Run TypeScript type checking |
 | `pnpm knip` | Find unused code and dependencies |
+| `pnpm test` | Run unit tests |
+| `pnpm test:e2e` | Run E2E tests (Gemini needs `GEMINI_API_KEY`; Whisper needs `WHISPER_SERVER_BIN` and ffmpeg) |
+
+### Building whisper-server
+
+The local Whisper engine is a self-contained `whisper-server` built by `scripts/build-whisper-server.sh` and published by the manual **Whisper Server** workflow as a prerelease (`whisper-server-<version>`), so it never shows up as an app update. When bumping whisper.cpp, run the workflow with the new tag and update `WHISPER_SERVER_RELEASE` in `src/shared/whisper.ts`.
 
 ## Contributing
 
