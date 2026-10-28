@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+import type {
+  WhisperKeepAlive,
+  WhisperModelId,
+  WhisperStatus,
+} from 'shared/whisper'
+
 declare global {
   interface Window {
     App: typeof API
@@ -8,12 +14,18 @@ declare global {
 
 const API = {
   // Transcription
-  transcribe: (audioBase64: string, mimeType: string, modeOverride?: string) =>
+  transcribe: (
+    audioBase64: string,
+    mimeType: string,
+    modeOverride?: string,
+    wav?: Uint8Array,
+  ) =>
     ipcRenderer.invoke(
       'transcribe',
       audioBase64,
       mimeType,
       modeOverride,
+      wav,
     ) as Promise<{
       text: string
       pasted: boolean
@@ -45,11 +57,34 @@ const API = {
         text: string
         mode: string
         timestamp: number
+        engine?: 'gemini' | 'whisper'
       }>
       slotA: string
       slotB: string
       activeSlot: 'A' | 'B'
+      whisperModel: WhisperModelId
+      whisperKeepAlive: WhisperKeepAlive
+      whisperPolish: boolean
     }>,
+
+  // Local Whisper
+  whisperStatus: () =>
+    ipcRenderer.invoke('whisper:status') as Promise<WhisperStatus>,
+
+  whisperInstall: () => ipcRenderer.invoke('whisper:install') as Promise<void>,
+
+  whisperCancel: () => ipcRenderer.invoke('whisper:cancel') as Promise<void>,
+
+  whisperUninstall: () =>
+    ipcRenderer.invoke('whisper:uninstall') as Promise<void>,
+
+  onWhisperStatus: (callback: (status: WhisperStatus) => void) => {
+    const handler = (_: unknown, status: WhisperStatus) => callback(status)
+    ipcRenderer.on('whisper:status', handler)
+    return () => {
+      ipcRenderer.removeListener('whisper:status', handler)
+    }
+  },
 
   // App info
   getVersion: () => ipcRenderer.invoke('app:version') as Promise<string>,
@@ -100,8 +135,11 @@ const API = {
     }
   },
 
-  onTranscribeAttempt: (callback: (e: { attempt: number }) => void) => {
-    const handler = (_: unknown, data: { attempt: number }) => callback(data)
+  onTranscribeAttempt: (
+    callback: (e: { attempt: number; max: number }) => void,
+  ) => {
+    const handler = (_: unknown, data: { attempt: number; max: number }) =>
+      callback(data)
     ipcRenderer.on('transcribe:attempt', handler)
     return () => {
       ipcRenderer.removeListener('transcribe:attempt', handler)

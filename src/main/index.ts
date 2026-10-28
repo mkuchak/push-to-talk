@@ -7,11 +7,19 @@ import { makeAppId } from 'shared/utils'
 
 import { MainWindow } from './windows/main'
 import { store, addToHistory, removeFromHistory } from './services/store'
-import { transcribeAudio } from './services/gemini'
 import { pasteText } from './services/paste'
 import { setupKeyListener } from './services/key-listener'
 import { setupTray } from './services/tray'
-import { withRetry, isRetryable } from './services/retry'
+import { transcribe } from './services/transcribe'
+import {
+  cancelWhisperInstall,
+  getWhisperStatus,
+  initWhisper,
+  installWhisper,
+  shutdownWhisper,
+  uninstallWhisper,
+  warmUpWhisper,
+} from './services/whisper'
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 
@@ -185,6 +193,11 @@ makeAppWithSingleInstanceLock(async () => {
     isQuitting = true
   })
 
+  // Never leave whisper-server (and the model in its memory) behind
+  app.on('will-quit', () => shutdownWhisper())
+
+  initWhisper((status) => mainWindow?.webContents.send('whisper:status', status))
+
   // Keep running when window is hidden
   app.on('window-all-closed', () => {})
 
@@ -195,7 +208,10 @@ makeAppWithSingleInstanceLock(async () => {
   // Global key listener for push-to-talk
   try {
     setupKeyListener({
-      onRecordStart: () => mainWindow?.webContents.send('recording:start'),
+      onRecordStart: () => {
+        mainWindow?.webContents.send('recording:start')
+        warmUpWhisper(store.get('mode'))
+      },
       onRecordStop: () => mainWindow?.webContents.send('recording:stop'),
       onRecordCancel: () => mainWindow?.webContents.send('recording:cancel'),
       onToggleUI: () => {
@@ -256,31 +272,25 @@ makeAppWithSingleInstanceLock(async () => {
 
   ipcMain.handle(
     'transcribe',
-    async (_, audioBase64: string, mimeType: string, modeOverride?: string) => {
+    async (
+      _,
+      audioBase64: string,
+      mimeType: string,
+      modeOverride?: string,
+      wav?: Uint8Array,
+    ) => {
       const mode = modeOverride || store.get('mode')
-      try {
-        const { value: text } = await withRetry(
-          () => transcribeAudio(audioBase64, mimeType, mode),
-          {
-            attempts: 3,
-            backoffMs: [500, 1200],
-            jitter: 0.2,
-            retryAfterCapMs: 3000,
-            isRetryable,
-            onAttempt: (attempt) =>
-              mainWindow?.webContents.send('transcribe:attempt', { attempt }),
-          },
-        )
-        addToHistory(text, mode)
-        const pasted = await pasteText(text)
-        return { text, pasted }
-      } catch (err) {
-        const inner =
-          err instanceof Error ? err.message : 'Transcription failed'
-        const n = (err as { attemptsMade?: number } | null)?.attemptsMade ?? 1
-        const label = n === 1 ? 'attempt' : 'attempts'
-        throw new Error(`Failed after ${n} ${label}: ${inner}`)
-      }
+      const { text, engine } = await transcribe({
+        audioBase64,
+        mimeType,
+        wav,
+        mode,
+        onAttempt: (attempt, max) =>
+          mainWindow?.webContents.send('transcribe:attempt', { attempt, max }),
+      })
+      addToHistory(text, mode, engine)
+      const pasted = await pasteText(text)
+      return { text, pasted }
     },
   )
 
@@ -303,7 +313,19 @@ makeAppWithSingleInstanceLock(async () => {
     slotA: store.get('slotA'),
     slotB: store.get('slotB'),
     activeSlot: store.get('activeSlot'),
+    whisperModel: store.get('whisperModel'),
+    whisperKeepAlive: store.get('whisperKeepAlive'),
+    whisperPolish: store.get('whisperPolish'),
   }))
+
+  ipcMain.handle('whisper:status', () => getWhisperStatus())
+
+  // Resolves when the setup finishes; failures arrive through whisper:status
+  ipcMain.handle('whisper:install', () => installWhisper())
+
+  ipcMain.handle('whisper:cancel', () => cancelWhisperInstall())
+
+  ipcMain.handle('whisper:uninstall', () => uninstallWhisper())
 
   ipcMain.handle('store:delete-history-entry', (_, id: string) => {
     removeFromHistory(id)

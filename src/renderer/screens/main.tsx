@@ -11,9 +11,20 @@ import {
   Trash2,
   CircleHelp,
   RotateCw,
+  Download,
 } from 'lucide-react'
 import { LANGUAGES, DEFAULT_LANGUAGE, ALL_MODES, generateModes, displayLabel } from 'shared/languages'
 import { DEFAULT_GEMINI_MODEL } from 'shared/constants'
+import { encodeWav } from 'shared/wav'
+import {
+  DEFAULT_WHISPER_MODEL,
+  WHISPER_KEEP_ALIVE_OPTIONS,
+  WHISPER_MODELS,
+  type WhisperInstallPhase,
+  type WhisperKeepAlive,
+  type WhisperModelId,
+  type WhisperStatus,
+} from 'shared/whisper'
 
 const { App } = window
 
@@ -24,6 +35,32 @@ function blobToBase64(blob: Blob): Promise<string> {
       resolve((reader.result as string).split(',')[1])
     reader.readAsDataURL(blob)
   })
+}
+
+// whisper-server can't read webm/opus. Decoding inside a 16 kHz context
+// resamples to what Whisper expects, so no ffmpeg is needed.
+async function blobToWav16k(blob: Blob): Promise<Uint8Array> {
+  const ctx = new OfflineAudioContext(1, 1, 16000)
+  const audio = await ctx.decodeAudioData(await blob.arrayBuffer())
+  const samples = new Float32Array(audio.length)
+  for (let ch = 0; ch < audio.numberOfChannels; ch++) {
+    const data = audio.getChannelData(ch)
+    for (let i = 0; i < data.length; i++) {
+      samples[i] += data[i] / audio.numberOfChannels
+    }
+  }
+  return encodeWav(samples, audio.sampleRate)
+}
+
+function formatMb(bytes: number) {
+  return `${Math.round(bytes / 1e6)} MB`
+}
+
+const INSTALL_PHASE_LABELS: Record<WhisperInstallPhase, string> = {
+  binary: 'Downloading engine...',
+  vad: 'Downloading voice detector...',
+  model: 'Downloading model...',
+  warmup: 'Preparing GPU (first run only)...',
 }
 
 function playTone(freq: number, endFreq: number, duration = 80) {
@@ -92,13 +129,24 @@ export function MainScreen() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDevice, setSelectedDevice] = useState('default')
   const [history, setHistory] = useState<
-    Array<{ id: string; text: string; mode: string; timestamp: number }>
+    Array<{
+      id: string
+      text: string
+      mode: string
+      timestamp: number
+      engine?: 'gemini' | 'whisper'
+    }>
   >([])
   const [context, setContext] = useState('')
   const [appVersion, setAppVersion] = useState('')
   const [slotA, setSlotA] = useState('')
   const [slotB, setSlotB] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const [maxAttempts, setMaxAttempts] = useState(3)
+  const [whisperStatus, setWhisperStatus] = useState<WhisperStatus | null>(null)
+  const [whisperModel, setWhisperModel] = useState<WhisperModelId>(DEFAULT_WHISPER_MODEL)
+  const [whisperKeepAlive, setWhisperKeepAlive] = useState<WhisperKeepAlive>('5m')
+  const [whisperPolish, setWhisperPolish] = useState(false)
   const [failedAudio, setFailedAudio] = useState<{
     blob: Blob
     mimeType: string
@@ -110,6 +158,19 @@ export function MainScreen() {
   const streamRef = useRef<MediaStream | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const generationRef = useRef(0)
+  const whisperReadyRef = useRef(false)
+  whisperReadyRef.current =
+    !!whisperStatus?.enabled && whisperStatus.installed && !whisperStatus.install
+
+  // Only pay for the WAV conversion when main will route to local Whisper
+  const prepareWav = useCallback(async (blob: Blob, recordedMode: string) => {
+    const [from, to] = recordedMode.split('>')
+    if (from !== to || !whisperReadyRef.current) return undefined
+    return blobToWav16k(blob).catch((err) => {
+      console.error('[whisper] WAV conversion failed:', err)
+      return undefined
+    })
+  }, [])
 
   const initAudioStream = useCallback(async (deviceId: string) => {
     if (streamRef.current) {
@@ -137,10 +198,15 @@ export function MainScreen() {
   // Initialize app state
   useEffect(() => {
     ;(async () => {
-      const [data, version] = await Promise.all([
+      const [data, version, status] = await Promise.all([
         App.getAll(),
         App.getVersion(),
+        App.whisperStatus(),
       ])
+      setWhisperStatus(status)
+      setWhisperModel(data.whisperModel)
+      setWhisperKeepAlive(data.whisperKeepAlive)
+      setWhisperPolish(data.whisperPolish)
       setMode(data.mode)
       setSelectedDevice(data.deviceId)
       setApiKey(data.apiKey)
@@ -219,8 +285,11 @@ export function MainScreen() {
     }
 
     try {
-      const base64 = await blobToBase64(blob)
-      const result = await App.transcribe(base64, blob.type, recordedMode)
+      const [base64, wav] = await Promise.all([
+        blobToBase64(blob),
+        prepareWav(blob, recordedMode),
+      ])
+      const result = await App.transcribe(base64, blob.type, recordedMode, wav)
 
       if (generationRef.current !== gen) return
 
@@ -242,7 +311,7 @@ export function MainScreen() {
         setAttempt(0)
       }
     }
-  }, [mode])
+  }, [mode, prepareWav])
 
   const handleRetry = useCallback(async () => {
     const target = failedAudio
@@ -254,8 +323,16 @@ export function MainScreen() {
     const gen = ++generationRef.current
 
     try {
-      const base64 = await blobToBase64(target.blob)
-      const result = await App.transcribe(base64, target.mimeType, target.mode)
+      const [base64, wav] = await Promise.all([
+        blobToBase64(target.blob),
+        prepareWav(target.blob, target.mode),
+      ])
+      const result = await App.transcribe(
+        base64,
+        target.mimeType,
+        target.mode,
+        wav,
+      )
 
       if (generationRef.current !== gen) return
 
@@ -276,7 +353,7 @@ export function MainScreen() {
         setAttempt(0)
       }
     }
-  }, [failedAudio])
+  }, [failedAudio, prepareWav])
 
   const cancelRecording = useCallback(() => {
     playTone(400, 250, 120)
@@ -312,8 +389,13 @@ export function MainScreen() {
       else if (e.slot === 'B') playTwoTone(1047, 523, 50, 15)
       if (e.mode) setMode(e.mode)
     })
-    const unsubAttempt = App.onTranscribeAttempt((e) => setAttempt(e.attempt))
+    const unsubAttempt = App.onTranscribeAttempt((e) => {
+      setAttempt(e.attempt)
+      setMaxAttempts(e.max)
+    })
+    const unsubWhisper = App.onWhisperStatus(setWhisperStatus)
     return () => {
+      unsubWhisper()
       unsubStart()
       unsubStop()
       unsubCancel()
@@ -352,6 +434,25 @@ export function MainScreen() {
   const handleContextSave = async (value: string) => {
     setContext(value)
     await App.storeSet('context', value)
+  }
+
+  // whisperEnabled lives in main; the status push reflects the change
+  const handleWhisperEnabledToggle = (enabled: boolean) =>
+    App.storeSet('whisperEnabled', enabled)
+
+  const handleWhisperModelChange = async (value: WhisperModelId) => {
+    setWhisperModel(value)
+    await App.storeSet('whisperModel', value)
+  }
+
+  const handleWhisperKeepAliveChange = async (value: WhisperKeepAlive) => {
+    setWhisperKeepAlive(value)
+    await App.storeSet('whisperKeepAlive', value)
+  }
+
+  const handleWhisperPolishToggle = async (value: boolean) => {
+    setWhisperPolish(value)
+    await App.storeSet('whisperPolish', value)
   }
 
   const handleLanguageToggle = async (locale: string) => {
@@ -419,7 +520,8 @@ export function MainScreen() {
             <span className="text-sm font-medium text-white/90">Settings</span>
           </div>
 
-          <div className="space-y-2.5">
+          {/* Scrolls once it outgrows the window's 800px height cap */}
+          <div className="space-y-2.5 max-h-[700px] overflow-y-auto">
             <div>
               <label className="text-[11px] text-white/50 mb-1 block">
                 Gemini API Key
@@ -547,6 +649,146 @@ export function MainScreen() {
               </p>
             </div>
 
+            <div>
+              <label className="text-[11px] text-white/50 mb-1 block">
+                Local Whisper
+              </label>
+              {whisperStatus && !whisperStatus.supported ? (
+                <p className="text-[11px] text-white/30">
+                  Available on Apple Silicon Macs only
+                </p>
+              ) : whisperStatus && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-white/30">
+                    Transcribes same-language modes on this Mac with Whisper
+                    large-v3-turbo. Translations keep using Gemini.
+                  </p>
+
+                  <select
+                    value={whisperModel}
+                    onChange={(e) =>
+                      handleWhisperModelChange(e.target.value as WhisperModelId)
+                    }
+                    disabled={!!whisperStatus.install}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-white/25 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {(Object.keys(WHISPER_MODELS) as WhisperModelId[]).map((id) => (
+                      <option key={id} value={id}>
+                        {WHISPER_MODELS[id].label} · {formatMb(WHISPER_MODELS[id].size)}
+                      </option>
+                    ))}
+                  </select>
+
+                  {whisperStatus.install ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-white/50">
+                          {INSTALL_PHASE_LABELS[whisperStatus.install.phase]}
+                          {whisperStatus.install.total > 0 &&
+                            ` ${Math.floor((whisperStatus.install.received / whisperStatus.install.total) * 100)}%`}
+                        </span>
+                        <button
+                          onClick={() => App.whisperCancel()}
+                          className="text-[11px] text-white/40 hover:text-white/70 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all"
+                          style={{
+                            width: `${whisperStatus.install.total > 0 ? (whisperStatus.install.received / whisperStatus.install.total) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : !whisperStatus.installed ? (
+                    <button
+                      onClick={() => App.whisperInstall()}
+                      className="w-full flex items-center justify-center gap-1.5 bg-blue-500/15 border border-blue-500/25 hover:bg-blue-500/25 rounded-lg px-2.5 py-1.5 text-sm text-blue-300 transition-colors"
+                    >
+                      <Download size={14} />
+                      {whisperStatus.installedModels.includes(whisperModel)
+                        ? 'Finish setup'
+                        : whisperStatus.installedModels.length > 0
+                          ? 'Download model'
+                          : 'Download & set up'}{' '}
+                      ({formatMb(whisperStatus.missingBytes)})
+                    </button>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={whisperStatus.enabled}
+                          onChange={(e) => handleWhisperEnabledToggle(e.target.checked)}
+                          className="accent-blue-500 rounded"
+                        />
+                        <span className="text-sm text-white/80">
+                          Use for same-language modes
+                        </span>
+                      </label>
+
+                      <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={whisperPolish}
+                          onChange={(e) => handleWhisperPolishToggle(e.target.checked)}
+                          className="accent-blue-500 rounded"
+                        />
+                        <span className="text-sm text-white/80">
+                          Polish with Gemini
+                        </span>
+                        <span className="text-[11px] text-white/30 ml-auto">
+                          {apiKey ? 'grammar, numerals' : 'needs API key'}
+                        </span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-white/50 shrink-0">
+                          Keep in memory
+                        </span>
+                        <select
+                          value={whisperKeepAlive}
+                          onChange={(e) =>
+                            handleWhisperKeepAliveChange(e.target.value as WhisperKeepAlive)
+                          }
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white outline-none focus:border-white/25 transition-colors cursor-pointer"
+                        >
+                          {WHISPER_KEEP_ALIVE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {!whisperStatus.install && whisperStatus.diskBytes > 0 && (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-white/30">
+                        {formatMb(whisperStatus.diskBytes)} on disk ·{' '}
+                        {whisperStatus.running ? 'loaded in memory' : 'not loaded'}
+                      </span>
+                      <button
+                        onClick={() => App.whisperUninstall()}
+                        className="flex items-center gap-1 text-[11px] text-white/40 hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 size={11} />
+                        Remove
+                      </button>
+                    </div>
+                  )}
+
+                  {whisperStatus.error && (
+                    <p className="text-[11px] text-red-400">{whisperStatus.error}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {appVersion && (
               <p className="text-[11px] text-white/25 text-center pt-1">
                 v{appVersion}
@@ -599,6 +841,7 @@ export function MainScreen() {
                     </p>
                     <p className="text-[11px] text-white/30">
                       {ALL_MODES.find((m) => m.value === entry.mode)?.label} ·{' '}
+                      {entry.engine === 'whisper' && 'Whisper · '}
                       {timeAgo(entry.timestamp)}
                     </p>
                   </div>
@@ -698,7 +941,9 @@ export function MainScreen() {
                     className="animate-spin text-blue-400"
                   />
                   <span className="text-xs text-blue-400 font-medium">
-                    {attempt >= 2 ? `Retrying... (${attempt}/3)` : 'Processing...'}
+                    {attempt >= 2
+                      ? `Retrying... (${attempt}/${maxAttempts})`
+                      : 'Processing...'}
                   </span>
                 </div>
               ) : (

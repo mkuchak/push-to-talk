@@ -19,11 +19,12 @@ function buildPrompt(from: string, to: string, context: string): string {
     prompt = `You are a precise translation assistant. The following audio is spoken in ${fromLang} (${from}). You MUST translate it into ${toLang} (${to}). Attention to the output language, double attention(!): you must respect the selected language, both the language and the country of origin — ${toLang} (${to}). Even if parts of the audio sound like ${toShort}, treat the entire input as ${fromShort} and translate everything to ${toShort}. Produce a faithful, natural-sounding translation that preserves the speaker's meaning, tone, and intent. Pay close attention to the speaker's intonation to distinguish questions from statements, and punctuate accordingly. Always use numerals instead of words spelled out. Fix any obvious errors. Output ONLY the translated text in ${toShort} — no quotes, no labels, no explanation, no original ${fromShort} text.`
   }
 
-  if (context.trim()) {
-    prompt += `\n\nThe speaker may reference the following domain-specific terms, names, or context. Use this to improve transcription accuracy and ensure these terms are spelled correctly:\n"""\n${context.trim()}\n"""`
-  }
+  return prompt + contextBlock(context)
+}
 
-  return prompt
+function contextBlock(context: string): string {
+  if (!context.trim()) return ''
+  return `\n\nThe speaker may reference the following domain-specific terms, names, or context. Use this to improve transcription accuracy and ensure these terms are spelled correctly:\n"""\n${context.trim()}\n"""`
 }
 
 function getPrompt(mode: string, context: string): string {
@@ -32,19 +33,22 @@ function getPrompt(mode: string, context: string): string {
   return buildPrompt('en-US', 'en-US', context)
 }
 
+function getClient() {
+  const apiKey = store.get('apiKey')
+  if (!apiKey) {
+    throw new Error('API key not configured. Open settings to add your Gemini API key.')
+  }
+  const model = store.get('model').trim() || DEFAULT_GEMINI_MODEL
+  return { ai: new GoogleGenAI({ apiKey }), model }
+}
+
 export async function transcribeAudio(
   audioBase64: string,
   mimeType: string,
   mode: string,
 ): Promise<string> {
-  const apiKey = store.get('apiKey')
-  if (!apiKey) {
-    throw new Error('API key not configured. Open settings to add your Gemini API key.')
-  }
-
+  const { ai, model } = getClient()
   const context = store.get('context')
-  const model = store.get('model').trim() || DEFAULT_GEMINI_MODEL
-  const ai = new GoogleGenAI({ apiKey })
 
   // Google's officially supported audio MIMEs don't include audio/webm.
   // Relabel as audio/ogg (same Opus codec, different container claim) for
@@ -66,4 +70,21 @@ export async function transcribeAudio(
     throw new Error('Gemini returned no text in response')
   }
   return text.trim()
+}
+
+/**
+ * Text-only cleanup of a local Whisper transcript, bringing back what Whisper
+ * can't do on its own: grammar fixes, numerals and the exact locale.
+ */
+export async function polishTranscript(text: string, locale: string): Promise<string> {
+  const { ai, model } = getClient()
+  const lang = LANGUAGES[locale] ?? LANGUAGES['en-US']
+  const prompt = `You are a precise proofreading assistant. The text below is a raw speech-to-text transcript in ${lang} (${locale}). Attention to the output language, double attention(!): keep it in ${lang} (${locale}), respecting both the language and the country of origin, including regional spelling. Fix obvious spelling, grammatical, and punctuation errors, including question marks where the sentence is clearly a question. Always use numerals instead of words spelled out. Do not translate, summarize, add, remove, or rephrase content beyond these corrections. Output only the corrected text, nothing else — no quotes, no labels, no explanation.${contextBlock(store.get('context'))}`
+
+  const response = await ai.models.generateContent({
+    model,
+    contents: [{ text: prompt }, { text: `Transcript:\n"""\n${text}\n"""` }],
+  })
+
+  return response.text?.trim() || text
 }
