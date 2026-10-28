@@ -41,6 +41,6 @@ jobs:
             gh release create "$TAG" out/* \
               --prerelease \
               --latest=false \
-              --title "whisper-server $VERSION" \
+              --title "$TAG" \
               --notes "Self-contained whisper.cpp server (macOS arm64, Metal) downloaded on demand by the optional local Whisper feature. Not an app release."
           fi

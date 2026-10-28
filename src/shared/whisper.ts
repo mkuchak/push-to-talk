@@ -41,10 +41,13 @@ export const WHISPER_VAD_MODEL: ModelFile = {
   sha256: '2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987',
 }
 
-// Built by .github/workflows/whisper-server.yml from scripts/build-whisper-server.sh
+// Built by .github/workflows/whisper-server.yml from scripts/build-whisper-server.sh,
+// published as tag/release `whisper-server-<version>` like the app's `v<version>`
+const WHISPER_SERVER_VERSION = 'v1.9.5'
+
 export const WHISPER_SERVER_RELEASE = {
-  version: 'v1.9.5',
-  url: 'https://github.com/mkuchak/push-to-talk/releases/download/whisper-server-v1.9.5/whisper-server-darwin-arm64.tar.gz',
+  version: WHISPER_SERVER_VERSION,
+  url: `https://github.com/mkuchak/push-to-talk/releases/download/whisper-server-${WHISPER_SERVER_VERSION}/whisper-server-${WHISPER_SERVER_VERSION}-darwin-arm64.tar.gz`,
   // Approximate, only used for progress and the free-space check
   size: 2_200_000,
 }

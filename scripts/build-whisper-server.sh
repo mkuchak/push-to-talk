@@ -9,7 +9,7 @@ set -euo pipefail
 
 VERSION="${1:?whisper.cpp tag, e.g. v1.9.5}"
 OUT_DIR="$(mkdir -p "${2:?output dir}" && cd "$2" && pwd)"
-ASSET="whisper-server-darwin-arm64.tar.gz"
+ASSET="whisper-server-${VERSION}-darwin-arm64.tar.gz"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
