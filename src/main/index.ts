@@ -62,7 +62,7 @@ let isShowingWindow = false
 function ensureDockHidden() {
   if (!PLATFORM.IS_MAC) return
   setTimeout(() => {
-    app.dock.hide()
+    app.dock?.hide()
     app.setActivationPolicy('accessory')
   }, 50)
 }
@@ -142,7 +142,7 @@ makeAppWithSingleInstanceLock(async () => {
 
   // Hide from dock — app lives in the tray (use both mechanisms for reliability)
   if (PLATFORM.IS_MAC) {
-    app.dock.hide()
+    app.dock?.hide()
     app.setActivationPolicy('accessory')
   }
 
