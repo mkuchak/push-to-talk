@@ -1,0 +1,46 @@
+name: Whisper Server
+
+# Builds the self-contained whisper-server that the optional local Whisper
+# feature downloads on demand. Run manually when bumping whisper.cpp, then
+# update WHISPER_SERVER_RELEASE in src/shared/whisper.ts to match.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: whisper.cpp tag to build
+        required: true
+        default: v1.9.5
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build whisper-server
+        env:
+          VERSION: ${{ inputs.version }}
+        run: scripts/build-whisper-server.sh "$VERSION" out
+
+      # Prerelease and never "latest", so electron-updater (which reads
+      # /releases/latest) can't mistake it for an app release
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          TAG="whisper-server-$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/* --clobber
+          else
+            gh release create "$TAG" out/* \
+              --prerelease \
+              --latest=false \
+              --title "whisper-server $VERSION" \
+              --notes "Self-contained whisper.cpp server (macOS arm64, Metal) downloaded on demand by the optional local Whisper feature. Not an app release."
+          fi
